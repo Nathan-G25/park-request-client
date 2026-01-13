@@ -70,7 +70,7 @@ const LoginPage = () => {
             />
           </div>
 
-          <button type="submit" className=" font-light w-full bg-linear-to-b from-[#8958F2] to-[#1326F5] text-white py-2 px-4 rounded-lg shadow-md backdrop-blur-lg hover:cursor-pointer">
+          <button disabled={isPending} type="submit" className=" font-light w-full bg-linear-to-b from-[#8958F2] to-[#1326F5] text-white py-2 px-4 rounded-lg shadow-md backdrop-blur-lg hover:cursor-pointer">
             { isPending ? 'Logging in...' : 'Login' }
           </button>
           { isError && <p className=" text-red-500 text-xs pt-2"> { error?.message } </p> }

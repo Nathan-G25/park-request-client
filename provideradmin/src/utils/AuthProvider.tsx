@@ -7,7 +7,7 @@ const intialState: AuthState = {
   user: null,
 };
 
-const AuthContext = createContext<
+export const AuthContext = createContext<
   { state: AuthState; dispatch: React.Dispatch<AuthAction> } | undefined
 >(undefined);
 

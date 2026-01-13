@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../utils/AuthProvider";
 import type { User } from "../types";
+import { useNavigate } from "react-router";
 
 
 type LoginCredentials = {
@@ -30,12 +31,15 @@ export const useLogin = () => {
 
     const queryClient = useQueryClient();
     const { dispatch } = useAuth();
+    const navigate = useNavigate();
     
     return useMutation<User, Error, LoginCredentials>({
         mutationFn: loginUser,
         onSuccess: ( user ) => {
             dispatch({ type: 'LOGIN', payload: user})
             queryClient.setQueryData(['user'], user)
+            navigate('/');
+
         },
         onError: ( error ) => {
             console.error("Login error: ", error.message);
