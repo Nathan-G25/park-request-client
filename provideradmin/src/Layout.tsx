@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router";
 import SideBar from "./components/SideBar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
 import { useContext } from "react";
 import { AuthContext } from "./utils/AuthProvider";
 
@@ -13,13 +13,17 @@ const Layout = () => {
 
   }
 
+  if(auth.state.user) {
+    console.log(`user not know ${auth.state.user.username}`)
+  }
+
 
   return (
     <SidebarProvider>
       <SideBar />
       {/* <SidebarInset className=" bg-gray-50"/> */}
-      <SidebarTrigger/>
-      <main className=" flex-1 flex flex-col ">
+      <SidebarTrigger className=" -ml-1"/>
+      <main className=" flex-1 flex flex-col px-10 pt-5">
         <Outlet/>
       </main>
     </SidebarProvider>

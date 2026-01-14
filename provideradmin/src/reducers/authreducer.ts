@@ -6,7 +6,7 @@ export const authReducer = (state: AuthState, action: AuthAction): AuthState => 
             localStorage.setItem('user', JSON.stringify(action.payload));
             return {
                 isAuthenticated: true,
-                user: action.payload
+                user: action.payload,
             }
         case 'LOGOUT':
             localStorage.removeItem('user');

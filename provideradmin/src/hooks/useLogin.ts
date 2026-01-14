@@ -23,22 +23,30 @@ const loginUser = async ( credentials: LoginCredentials ): Promise<User> => {
         throw new Error('Login failed');
     }
 
-    return response.json() as Promise<User>;
+    const data = await response.json();
+
+    //const user = data.user;
+
+    console.log(data)
+
+    return data;
 }
+
 
 
 export const useLogin = () => {
 
     const queryClient = useQueryClient();
-    const { dispatch } = useAuth();
+    const { state,dispatch } = useAuth();
     const navigate = useNavigate();
     
     return useMutation<User, Error, LoginCredentials>({
         mutationFn: loginUser,
-        onSuccess: ( user ) => {
+        onSuccess: ( user : User ) => {
             dispatch({ type: 'LOGIN', payload: user})
             queryClient.setQueryData(['user'], user)
             navigate('/');
+            console.log(`Logged in user: ${user.username}`);
 
         },
         onError: ( error ) => {
