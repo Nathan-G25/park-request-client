@@ -1,7 +1,6 @@
 export type User = {
-    id: string;
-    username: string;
-    password: string;
+    token: string;
+    username:string;
 }
 
 export type AuthState = {
@@ -12,3 +11,18 @@ export type AuthState = {
 export type AuthAction = 
 |{ type:'LOGIN'; payload: User}
 |{ type:'LOGOUT' }
+
+export type NotificationType =  
+| "reservation"
+| "walk-in"
+| "check-in"
+| "capacity"
+| "completed"
+
+export interface Notification {
+    id: string;
+    type: NotificationType;
+    title: string;
+    description: string;
+    timeAgo: string;
+}   

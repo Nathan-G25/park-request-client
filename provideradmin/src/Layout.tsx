@@ -13,7 +13,7 @@ const Layout = () => {
 
   }
 
-  if(auth.state.user) {
+  if(auth.state.user?.token) {
     console.log(`user not know ${auth.state.user.username}`)
   }
 
@@ -23,7 +23,7 @@ const Layout = () => {
       <SideBar />
       {/* <SidebarInset className=" bg-gray-50"/> */}
       <SidebarTrigger className=" -ml-1"/>
-      <main className=" flex-1 flex flex-col px-10 pt-5">
+      <main className=" flex-1 flex flex-col pl-3 pr-6 md:px-10 pt-5">
         <Outlet/>
       </main>
     </SidebarProvider>

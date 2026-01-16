@@ -37,7 +37,7 @@ const loginUser = async ( credentials: LoginCredentials ): Promise<User> => {
 export const useLogin = () => {
 
     const queryClient = useQueryClient();
-    const { state,dispatch } = useAuth();
+    const { dispatch } = useAuth();
     const navigate = useNavigate();
     
     return useMutation<User, Error, LoginCredentials>({

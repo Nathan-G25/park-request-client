@@ -68,7 +68,7 @@ const SideBar = () => {
   const { mutate:logout } = useLogout();
 
   return (
-    <Sidebar className=" w-60 rounded-r-md">
+    <Sidebar collapsible="icon" className=" w-64 rounded-r-md">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-lg tracking-tighter font-medium mt-2 mb-5 text-white">
@@ -109,6 +109,7 @@ const SideBar = () => {
               <DropdownMenuContent
                 side="top"
                 className="w-[--radix-popper-anchor-width]"
+                align="end"
               >
                 <DropdownMenuItem>
                   <User2 />
