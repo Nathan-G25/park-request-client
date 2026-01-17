@@ -1,5 +1,5 @@
 import type { NotificationType } from "@/types";
-import { AlertTriangle, Car, CheckCircle2, Clock, UserCheck, type LucideIcon } from "lucide-react";
+import { AlertTriangle, AlertTriangleIcon, Car, CheckCircle2, Clock, UserCheck, type LucideIcon } from "lucide-react";
 
 export const getNotificationStyles: Record<
   NotificationType,
@@ -25,9 +25,9 @@ export const getNotificationStyles: Record<
     iconColor: "text-green-600",
   },
     "capacity": {
-        icon: AlertTriangle,
+        icon: AlertTriangleIcon,
         bgColor: "bg-orange-100",
-        iconColor: "bg-orange-600",
+        iconColor: "text-orange-600",
     },
     "completed": {
         icon: CheckCircle2,
