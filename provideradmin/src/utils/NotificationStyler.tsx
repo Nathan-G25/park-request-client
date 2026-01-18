@@ -1,5 +1,5 @@
 import type { NotificationType } from "@/types";
-import { AlertTriangle, AlertTriangleIcon, Car, CheckCircle2, Clock, UserCheck, type LucideIcon } from "lucide-react";
+import { AlertTriangleIcon, Car, CheckCircle2, Clock, UserCheck, type LucideIcon } from "lucide-react";
 
 export const getNotificationStyles: Record<
   NotificationType,

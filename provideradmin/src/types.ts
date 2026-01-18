@@ -26,3 +26,14 @@ export interface Notification {
     description: string;
     timeAgo: string;
 }   
+
+export interface ParkingLocation {
+    id: string;
+    name: string;
+    address: string;
+    type: string;
+    status: "Available" | "Partial" | "Full" | "Closed";
+    occupiedSpots: number;
+    totalSpots: number;
+    lastUpdated: string;
+}
