@@ -32,7 +32,7 @@ const ParkingLocationCard = ({
   return (
     <Card className="overflow-hidden transition-all shadow-md hover:shadow-lg">
       <CardHeader className="pb-2 pt-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start flex-wrap justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-muted p-2">
               <Car className="size-7 text-muted-foreground" />

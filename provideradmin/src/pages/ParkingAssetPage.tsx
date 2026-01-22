@@ -3,7 +3,6 @@ import type { ParkingLocation } from "@/types";
 
 const mockData: ParkingLocation[] = [
   {
-    id: "edna-001",
     name: "Edna Mall Parking",
     address: "Bole Road, Addis Ababa",
     type: "Mall",
@@ -13,7 +12,6 @@ const mockData: ParkingLocation[] = [
     lastUpdated: "2 min ago",
   },
   {
-    id: "tikur-001",
     name: "Tikur Anbessa Hospital Garage",
     address: "Churchill Avenue, Addis Ababa",
     type: "Hospital",
@@ -26,8 +24,8 @@ const mockData: ParkingLocation[] = [
 ];
 
 
-  const handleMoreClick = (id: string) => {
-    console.log("View details for:", id);
+  const handleMoreClick = (name: string) => {
+    console.log("View details for:", name);
   };
 
 
@@ -41,7 +39,7 @@ const ParkingAssetPage = () => {
       </div>
       {mockData.map((loc) => (
         <ParkingLocationCard
-          key={loc.id}
+          key={loc.name}
           location={loc}
           onMoreClick={handleMoreClick}
         />

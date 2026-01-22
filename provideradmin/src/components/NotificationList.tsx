@@ -13,7 +13,7 @@ const NotificationList = ({ notification }: NotificationListProps) => {
         const style = getNotificationStyles[notif.type];
         const Icon = style.icon;
         return (
-          <div key={notif.id} className=" flex gap-4 items-center border-y border-gray-100  py-3">
+          <div key={notif.type} className=" flex gap-4 items-center border-y border-gray-100  py-3">
             <div className={cn(" px-3 py-2 rounded-md", style.bgColor)}>
               <Icon className={cn(style.iconColor, "size-5")} />
             </div>

@@ -20,7 +20,6 @@ export type NotificationType =
 | "completed"
 
 export interface Notification {
-    id: string;
     type: NotificationType;
     title: string;
     description: string;
@@ -28,7 +27,6 @@ export interface Notification {
 }   
 
 export interface ParkingLocation {
-    id: string;
     name: string;
     address: string;
     type: string;
@@ -36,4 +34,20 @@ export interface ParkingLocation {
     occupiedSpots: number;
     totalSpots: number;
     lastUpdated: string;
+}
+
+export interface WardenStatusSummary {
+    online:number;
+    onBreak: number;
+    avgReliability: number;
+}
+
+export interface Warden {
+    firstName: string;
+    lastName: string;
+    status: "Online" | "Break" | "Offline" | "Away";
+    location: string;
+    reliabilityScore: number;
+    shiftsThisWeek: number;
+    phoneNumber: string;
 }

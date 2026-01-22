@@ -28,35 +28,30 @@ const Summary = {
 
 const notifications: Notification[] = [
   {
-    id: "1",
     type: "reservation",
     title: "New reservation for Edna Mall",
     description: "Spot A-15 • 2 hours",
     timeAgo: "2 min ago",
   },
   {
-    id: "2",
     type: "walk-in",
     title: "Walk-in entry at Friendship Mall",
     description: "Plate: AA-12345",
     timeAgo: "5 min ago",
   },
   {
-    id: "3",
     type: "check-in",
     title: "Abebe Kebede clocked in",
     description: "Assigned to Bole Zone",
     timeAgo: "12 min ago",
   },
   {
-    id: "4",
     type: "capacity",
     title: "Ethio-Telecom Tower reaching capacity",
     description: "92% occupied",
     timeAgo: "18 min ago",
   },
   {
-    id: "5",
     type: "completed",
     title: "Reservation completed",
     description: "Spot B-8 • Payment received",
