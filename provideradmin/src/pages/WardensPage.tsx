@@ -57,7 +57,7 @@ const WardensPage = () => {
         <h1 className=" font-bold text-3xl tracking-tighter">
           Warden Management
         </h1>
-        <p>Monitor and manage your parking wardens</p>
+        <p className=" tracking-wide">Monitor and manage your parking wardens</p>
       </div>
       <div className=" grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
         <WardenStatCard

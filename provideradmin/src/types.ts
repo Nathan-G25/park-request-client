@@ -51,3 +51,15 @@ export interface Warden {
     shiftsThisWeek: number;
     phoneNumber: string;
 }
+
+export interface LocationStatus extends ParkingLocation {
+    confidence: number;
+}
+
+export interface VehicleLog {
+    plateNumber: string;
+    action: "Entry" | "Exit";
+    timestamp: string;
+    location: string;
+    duration?: string;
+}

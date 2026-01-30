@@ -7,12 +7,10 @@ import { cn } from "@/lib/utils";
 
 interface ParkingLocationCardProps {
   location: ParkingLocation;
-  onMoreClick?: (id: string) => void;
 }
 
 const ParkingLocationCard = ({
   location,
-  onMoreClick,
 }: ParkingLocationCardProps) => {
   const percentage = Math.round(
     (location.occupiedSpots / location.totalSpots) * 100,
@@ -64,16 +62,13 @@ const ParkingLocationCard = ({
               {location.status}
             </Badge>
 
-            {onMoreClick && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => onMoreClick(location.id)}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
-            )}
           </div>
         </div>
       </CardHeader>

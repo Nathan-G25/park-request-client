@@ -33,8 +33,8 @@ const WardenCard = ({ warden }: WardenCardProps) => {
     [warden.firstName, warden.lastName].filter(Boolean).join(" ") || "John Doe";
 
   return (
-    <Card className=" overflow-hidden transtion-all shadow-md hover:shadow-lg">
-      <CardContent className=" flex items-center justify-between">
+    <div className=" overflow-hidden transtion-all shadow-md hover:shadow-lg py-6 rounded-md w-full">
+      <section className=" flex flex-col md:flex-row md:items-center md:justify-between w-full px-6">
         <section className=" flex items-center gap-5">
           <div className=" flex items-end">
             <Avatar className={cn(" size-18 bg-blue-700 z-0 ")}>
@@ -64,35 +64,35 @@ const WardenCard = ({ warden }: WardenCardProps) => {
                 <p className=" text-sm">{warden.status}</p>
               </div>
               {warden.status === "Online" && (
-                <span className=" text-gray text-sm">Active Now</span>
+                <span className=" text-gray-500 text-sm">Active Now</span>
               )}
             </div>
             <div className=" flex items-center gap-0.5 pt-2 text-gray-500">
               <MapPin className=" size-4" />
-              <p className=" text-sm mr-2">{warden.location}</p>
+              <p className=" text-xs md:text-sm mr-5 md:mr-2">{warden.location}</p>
               <Phone className=" size-4" />
-              <p className=" text-sm">{warden.phoneNumber}</p>
+              <p className=" text-xs md:text-sm">{warden.phoneNumber}</p>
             </div>
           </div>
         </section>
-        <section className=" flex items-center gap-5">
+        <section className=" flex items-center md:justify-center justify-around pt-3 md:pt-0 gap-5">
           <div className=" flex flex-col justify-center">
             <div className=" flex items-center gap-1">
-              <Star className=" size-5 text-yellow-500" />
-              <p className=" font-medium">{warden.reliabilityScore}%</p>
+              <Star className=" size-4 md:size-5 text-yellow-500" />
+              <p className=" font-medium md:text-base text-sm">{warden.reliabilityScore}%</p>
             </div>
-            <p className=" text-gray-500 text-sm">Reliability Score</p>
+            <p className=" text-gray-500 text-xs md:text-sm">Reliability Score</p>
           </div>
           <div className=" flex flex-col justify-end">
-            <p className=" font-medium">{warden.shiftsThisWeek}</p>
-            <p className=" text-sm text-gray-500">Shifts this week</p>
+            <p className=" font-medium md:text-base text-sm">{warden.shiftsThisWeek}</p>
+            <p className=" text-xs md:text-sm text-gray-500">Shifts this week</p>
           </div>
           <button className=" outline-0 cursor-pointer p-1 hover:bg-neutral-100">
-            <MoreVertical className=" size-5" />
+            <MoreVertical className=" size-4 md:size-5" />
           </button>
         </section>
-      </CardContent>
-    </Card>
+      </section>
+    </div>
   );
 };
 
