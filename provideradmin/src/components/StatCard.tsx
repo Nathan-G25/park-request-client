@@ -31,7 +31,7 @@ const StatCard = ({
 
   return (
     <Card className={cn("overflow-hidden shadow-md", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className=" text-gray-500 font-medium">{title}</CardTitle>
         <div
           className={cn(

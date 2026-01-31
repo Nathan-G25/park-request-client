@@ -54,10 +54,10 @@ const WardensPage = () => {
   return (
     <div>
       <div className=" flex flex-col justify-center gap-1">
-        <h1 className=" font-bold text-3xl tracking-tighter">
+        <h1 className=" font-bold text-2xl tracking-tighter">
           Warden Management
         </h1>
-        <p className=" tracking-wide">Monitor and manage your parking wardens</p>
+        <p className=" tracking-wide text-sm">Monitor and manage your parking wardens</p>
       </div>
       <div className=" grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
         <WardenStatCard
@@ -86,7 +86,7 @@ const WardensPage = () => {
           <span>Add Warden</span>
         </button>
       </div>
-      <div className=" space-y-5 pt-5">
+      <div className=" space-y-5 pt-5 pb-6">
         {mockWardens.map((wardens) => (
           <WardenCard key={wardens.firstName} warden={wardens} />
         ))}

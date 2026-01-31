@@ -63,3 +63,16 @@ export interface VehicleLog {
     location: string;
     duration?: string;
 }
+
+export interface Reservation {
+  id: string
+  customerName: string
+  vehicleModel: string
+  plateNumber: string
+  location: string
+  spot: string
+  timeRange: string         
+  timeLabel: string         
+  status: "Active" | "Upcoming" | "Completed"
+  amount: string             
+}

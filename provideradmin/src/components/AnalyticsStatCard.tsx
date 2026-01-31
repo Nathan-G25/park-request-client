@@ -1,28 +1,26 @@
-import type { LucideIcon } from "lucide-react";
-import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
+import { Card } from "./ui/card";
+import type { LucideIcon } from "lucide-react";
 
 interface WardenStatCardProps {
   icon: LucideIcon;
   value: number | string;
   label: string;
-  color?: "success" | "warning" | "accent" | "default";
+  color?: "success" | "warning" | "accent" ;
   className?: string;
 }
 
-const WardenStatCard = ({
+const AnalyticsStatCard = ({
   icon: Icon,
   value,
   label,
-  color = "default",
+  color = "success",
   className,
 }: WardenStatCardProps) => {
-
   const iconColor = {
     success: "text-green-600 bg-green-100 border-green-200",
     warning: "text-orange-600 bg-orange-100 border-orange-200",
-    accent: "text-purple-600 bg-purple-100 border-purple-200",
-    default: "text-gray-600 bg-gray-100 border-gray-200",
+    accent: "text-blue-600 bg-blue-100 border-blue-200",
   }[color];
 
   return (
@@ -36,11 +34,11 @@ const WardenStatCard = ({
         <Icon className={cn("size-5")} />
       </div>
       <div className=" flex flex-col items-start justify-center">
-        <div className="text-xl font-bold tracking-tight">{value}</div>
-        <p className="mt-0.5 text-sm text-muted-foreground">{label}</p>
+        <p className=" text-sm text-muted-foreground">{label}</p>
+        <div className=" mt-0.5 text-xl font-bold tracking-tight">{value}</div>
       </div>
     </Card>
   );
 };
 
-export default WardenStatCard;
+export default AnalyticsStatCard;

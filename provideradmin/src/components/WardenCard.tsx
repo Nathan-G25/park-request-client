@@ -1,5 +1,4 @@
 import type { Warden } from "@/types";
-import { Card, CardContent } from "./ui/card";
 import { Avatar } from "./ui/avatar";
 import { AvatarFallback } from "@radix-ui/react-avatar";
 import { cn } from "@/lib/utils";

@@ -63,8 +63,8 @@ const Home = () => {
   return (
     <div className=" min-h-screen">
       <header className=" flex flex-col gap-1">
-        <h1 className=" font-bold tracking-tighter text-3xl">Dashboard</h1>
-        <p className=" tracking-wide">Real-time overview of your parking network</p>
+        <h1 className=" font-bold tracking-tighter text-2xl">Dashboard</h1>
+        <p className=" tracking-wide text-sm">Real-time overview of your parking network</p>
       </header>
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-10">
         <StatCard

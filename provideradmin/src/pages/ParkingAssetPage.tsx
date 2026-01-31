@@ -28,8 +28,8 @@ const ParkingAssetPage = () => {
   return (
     <div className=" flex flex-col justify-center gap-5">
       <div className=" flex flex-col justify-center gap-1 mb-4">
-        <h1 className=" text-3xl font-bold tracking-tighter">Parking Assets</h1>
-        <p className=" tracking-wide">Manage your parking locations</p>
+        <h1 className=" text-2xl font-bold tracking-tighter">Parking Assets</h1>
+        <p className=" tracking-wide text-sm">Manage your parking locations</p>
       </div>
       {mockData.map((loc) => (
         <ParkingLocationCard

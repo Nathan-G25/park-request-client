@@ -14,7 +14,7 @@ const LocationStatusCard = ({ locationStatus }: LocationStatusCardProps) => {
   const isMedium = percentage > 30 && percentage <= 70;
 
   return (
-    <div className="overflow-hidden border-t border-t-gray-200shadow-none bg-transparent py-3">
+    <div className="overflow-hidden border-t border-t-gray-200 shadow-none bg-transparent py-3">
       <section className=" w-full px-1 ">
         <div className=" flex justify-between items-center">
           <div className="flex flex-col justify-center text-sm">

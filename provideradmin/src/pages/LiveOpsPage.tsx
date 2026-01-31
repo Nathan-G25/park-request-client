@@ -62,10 +62,10 @@ const LiveOpsPage = () => {
   return (
     <div>
       <div className=" flex flex-col gap-1">
-        <h1 className=" text-3xl font-bold tracking-tighter">
+        <h1 className=" text-2xl font-bold tracking-tighter">
           Live Operations
         </h1>
-        <p className=" tracking-wide">
+        <p className=" text-sm tracking-wide">
           Real-time monitoring of all parking locations
         </p>
       </div>
