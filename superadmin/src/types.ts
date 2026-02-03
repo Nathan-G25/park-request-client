@@ -12,3 +12,12 @@ export interface Notification {
     description: string;
     timeAgo: string;
 }   
+
+export interface Provider {
+    id: number;
+    name: string;
+    email: string;
+    locations: number;
+    spaces:number;
+    status: string;
+}
