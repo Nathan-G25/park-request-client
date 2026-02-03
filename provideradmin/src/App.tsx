@@ -20,7 +20,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            //This will be the dashboard and main layout route
+            {/* //This will be the dashboard and main layout route */}
             <Route element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="dashboard" element={<Navigate to="/" replace />} />

@@ -1,54 +1,22 @@
-import {
-  Calendar,
-  Car,
-  ChartColumn,
-  ChevronUp,
-  LayoutDashboard,
-  LogOut,
-  Radio,
-  User2,
-  Users,
-} from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "./ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { useAuth } from "@/utils/AuthProvider";
-import { useLogout } from "@/hooks/useLogout";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSubButton } from './ui/sidebar'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
+import { Calendar, ChartColumn, ChevronUp, CircleParking, FileText, LayoutDashboard, LogOut, Shield, User2 } from 'lucide-react'
 
 const items = [
   {
-    title: "Dashboard",
+    title: "Overview",
     url: "/",
     icon: LayoutDashboard,
   },
   {
-    title: "Parking Assets",
-    url: "/assets",
-    icon: Car,
+    title: "Providers",
+    url: "/providers",
+    icon: CircleParking,
   },
   {
     title: "Wardens",
     url: "/wardens",
-    icon: Users,
-  },
-  {
-    title: "Live Operations",
-    url: "/live-ops",
-    icon: Radio,
+    icon: Shield,
   },
   {
     title: "Reservations",
@@ -60,19 +28,19 @@ const items = [
     url: "/analytics",
     icon: ChartColumn,
   },
+   {
+    title: "Audit Logs",
+    url: "/audit-logs",
+    icon: FileText,
+  },
 ];
 
 const SideBar = () => {
-
-  const { state } = useAuth();
-  const { mutate:logout } = useLogout();
-
   return (
     <Sidebar collapsible="icon" className=" w-64 rounded-r-md">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-lg tracking-tighter font-medium mt-2 mb-5 text-white">
-            {" "}
             Park Request
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -101,10 +69,10 @@ const SideBar = () => {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className=" text-gray-300">
-                  <User2 /> {state.user?.username}
+                <SidebarMenuSubButton className=" text-gray-300">
+                  <User2 /> 
                   <ChevronUp className="ml-auto" />
-                </SidebarMenuButton>
+                </SidebarMenuSubButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
@@ -115,7 +83,7 @@ const SideBar = () => {
                   <User2 />
                   <span>Account</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onClick={() => logout()}>
+                <DropdownMenuItem variant="destructive">
                   <LogOut/>
                   <span>Sign out</span>
                 </DropdownMenuItem>
@@ -125,7 +93,7 @@ const SideBar = () => {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  );
-};
+  )
+}
 
-export default SideBar;
+export default SideBar
