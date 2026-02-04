@@ -31,5 +31,15 @@ export interface Warden {
   reliability: number;
   updatesToday: number;
   lastSeen: string;
-  alert?: string;
+}
+
+export interface Reservation {
+  id: string;
+  driver: string;
+  location: string;
+  provider: string;
+  startTime: string;
+  duration: string;
+  status: string;
+  amount: string;
 }

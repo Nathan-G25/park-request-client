@@ -3,6 +3,7 @@ import Layout from './Layout'
 import Overview from './pages/Overview'
 import Providers from './pages/Providers'
 import Wardens from './pages/Wardens'
+import Reservations from './pages/Reservations'
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
               <Route index element={<Overview />} />
               <Route path='/providers' element={<Providers />} />
               <Route path='/wardens' element={<Wardens/>} />
+              <Route path='/reservations' element={<Reservations/>} />
             </Route>
           </Routes>
         </BrowserRouter>
