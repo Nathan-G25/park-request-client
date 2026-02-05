@@ -32,7 +32,6 @@ export interface Warden {
   updatesToday: number;
   lastSeen: string;
 }
-
 export interface Reservation {
   id: string;
   driver: string;
@@ -42,4 +41,13 @@ export interface Reservation {
   duration: string;
   status: string;
   amount: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  actorType: "admin" | "provider" | "warden";
+  target: string;
+  category: "auth" | "provider" | "warden";
+  timestamp: string;
 }
