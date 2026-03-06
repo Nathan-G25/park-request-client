@@ -46,8 +46,6 @@ export const useLogin = () => {
             dispatch({ type: 'LOGIN', payload: user})
             queryClient.setQueryData(['user'], user)
             navigate('/');
-            console.log(`Logged in user: ${user.username}`);
-
         },
         onError: ( error ) => {
             console.error("Login error: ", error.message);

@@ -9,7 +9,7 @@ const stats = {
   totalSpaces: 1248,
   totalChange: 12,
   available: 342,
-  occupancy: 27, // or calculate: Math.round((1 - available/total)*100)
+  occupancy: 27,
   activeReservations: 156,
   reservationChange: 8,
   pending: 23,

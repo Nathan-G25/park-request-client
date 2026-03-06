@@ -10,6 +10,8 @@ import WardensPage from "./pages/WardensPage.tsx";
 import LiveOpsPage from "./pages/LiveOpsPage.tsx";
 import ReservationsPage from "./pages/ReservationsPage.tsx";
 import AnalyticsPage from "./pages/AnalyticsPage.tsx";
+import SignUpPage from "./pages/SignUpPage.tsx";
+import { Toaster } from "react-hot-toast"
 
 const queryClient = new QueryClient();
 
@@ -17,9 +19,11 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <Toaster position="top-right" reverseOrder={false} />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
             {/* //This will be the dashboard and main layout route */}
             <Route element={<Layout />}>
               <Route index element={<Home />} />

@@ -16,7 +16,7 @@ const LoginPage = () => {
   }
 
   return (
-    <main className=" flex items-center justify-center h-screen w-full relative">
+    <main className=" flex font-inter items-center justify-center h-screen w-full relative">
      <div
    className="absolute inset-0 z-0"
    style={{
