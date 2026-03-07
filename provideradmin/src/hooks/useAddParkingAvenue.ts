@@ -29,7 +29,11 @@ export const useAddParkingAvenue = () => {
             formData.append("totalSpots", data.totalSpots.toString());
             formData.append("status", data.status);
             formData.append("currentSpots", data.currentSpots.toString());
-            formData.append("legalDoc", data.legalDoc)
+
+            if (data.legalDoc && data.legalDoc[0]) {
+
+                formData.append("legalDoc", data.legalDoc[0])
+            }
 
             const storedUser = localStorage.getItem("user");
 

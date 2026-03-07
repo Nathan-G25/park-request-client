@@ -28,7 +28,7 @@ import {
 } from "./ui/dropdown-menu";
 import { useLogout } from "@/hooks/useLogout";
 import { useQuery } from "@tanstack/react-query";
-import z from "zod";
+import { ProfileSchema, type UserProfile } from "@/schema";
 
 const items = [
   {
@@ -63,16 +63,7 @@ const items = [
   },
 ];
 
-export const ProfileSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
-  username: z.string(),
-  email: z.string().email(),
-  phoneNo: z.string(),
-  isVerified: z.string(),
-});
 
-export type UserProfile = z.infer<typeof ProfileSchema>;
 
 
 const fetchUserProfile = async (): Promise<UserProfile> => {

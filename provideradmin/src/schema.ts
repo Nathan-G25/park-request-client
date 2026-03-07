@@ -46,3 +46,35 @@ export const createParkingAvenueSchema = z.object({
 });
 
 export type CreateParkingAvenue = z.infer<typeof createParkingAvenueSchema>
+
+export const ProfileSchema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  username: z.string(),
+  email: z.string().email(),
+  phoneNo: z.string(),
+  isVerified: z.string(),
+});
+
+export type UserProfile = z.infer<typeof ProfileSchema>;
+
+export const parkingAvenueResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  address: z.string(),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  ownerId: z.string(),
+  workingHrs: z.string(),
+  hourlyRate: z.coerce.number().min(0),
+  type: z.string(),
+  totalSpots: z.coerce.number().min(0).default(0),
+  status: z.enum(["OPEN", "CLOSED", "FULL"]),
+  currentSpots: z.coerce.number().min(0).default(0),
+  legalDoc: z.string().optional().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  approvalStatus: z.string()
+});
+
+export type ParkingAvenue = z.infer<typeof parkingAvenueResponseSchema>;

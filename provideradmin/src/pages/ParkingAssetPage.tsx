@@ -13,37 +13,75 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAddParkingAvenue } from "@/hooks/useAddParkingAvenue";
-import { createParkingAvenueSchema, type CreateParkingAvenue } from "@/schema";
-import type { ParkingLocation } from "@/types";
+import {
+  createParkingAvenueSchema,
+  parkingAvenueResponseSchema,
+  type CreateParkingAvenue,
+  type ParkingAvenue,
+} from "@/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useState } from "react"; // ✅ Add this
+import { useState } from "react";
 import toast from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
+import z, { ZodError } from "zod";
 
-const mockData: ParkingLocation[] = [
-  {
-    name: "Edna Mall Parking",
-    address: "Bole Road, Addis Ababa",
-    type: "Mall",
-    status: "Partial",
-    occupiedSpots: 312,
-    totalSpots: 450,
-    lastUpdated: "2 min ago",
-  },
-  {
-    name: "Tikur Anbessa Hospital Garage",
-    address: "Churchill Avenue, Addis Ababa",
-    type: "Hospital",
-    status: "Available",
-    occupiedSpots: 45,
-    totalSpots: 200,
-    lastUpdated: "5 min ago",
-  },
-];
+const fetchParkingAvenues = async ():Promise<ParkingAvenue[]> => {
+  const storedUser = localStorage.getItem("user");
+
+  if (!storedUser) {
+    throw new Error("No user found");
+  }
+
+  const user = JSON.parse(storedUser);
+  const token = user.accessToken;
+
+  if (!token) {
+    throw new Error("No accesstoken found");
+  }
+
+  const response = await fetch("http://localhost:3000/parking-avenue/list", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  console.log(data);
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    }
+    throw new Error("Could not fetch profile");
+  }
+  try {
+    const parsedData = z.array(parkingAvenueResponseSchema).parse(data);
+    return parsedData;
+  } catch (err) {
+    if (err instanceof ZodError) {
+      console.error("Zod validation failed on API response:", err.message);
+    }
+    return [];
+  }
+
+};
 
 const ParkingAssetPage = () => {
+  const { data: location, error } = useQuery({
+    queryKey: ["parkingAvenues"],
+    queryFn: fetchParkingAvenues,
+    retry: false,
+  });
+
+  if (error) {
+    console.error("Error fetching user profile:", error);
+  }
+
   const { mutate, isPending } = useAddParkingAvenue();
-  const [open, setOpen] = useState(false); // ✅ Control dialog state
+  const [open, setOpen] = useState(false);
 
   const {
     register,
@@ -55,16 +93,11 @@ const ParkingAssetPage = () => {
   });
 
   const onSubmit = (data: CreateParkingAvenue) => {
-    console.log("📤 Submitting data:", {
-      legalDocLength: (data.legalDoc as FileList | undefined)?.length,
-      legalDocName: (data.legalDoc as FileList | undefined)?.[0]?.name,
-    });
-
     mutate(data, {
       onSuccess: (data) => {
         toast.success(data.message || "Parking Avenue Created Successfully");
         reset();
-        setOpen(false); 
+        setOpen(false);
       },
     });
   };
@@ -204,7 +237,7 @@ const ParkingAssetPage = () => {
                     required: "Legal document is required",
                     validate: {
                       notEmpty: (value) => {
-                        console.log("🔍 File validation:", {
+                        console.log("File validation:", {
                           value,
                           length: value?.length,
                           isFileList: value instanceof FileList,
@@ -251,9 +284,10 @@ const ParkingAssetPage = () => {
         </Dialog>
       </div>
 
-      {mockData.map((loc) => (
-        <ParkingLocationCard key={loc.name} location={loc} />
-      ))}
+      {location &&
+        location.map((loc: ParkingAvenue) => (
+          <ParkingLocationCard key={loc.id} location={loc} />
+        ))}
     </div>
   );
 };

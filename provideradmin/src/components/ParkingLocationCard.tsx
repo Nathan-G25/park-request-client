@@ -1,31 +1,23 @@
-import type { ParkingLocation } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Car, MapPin, MoreHorizontal } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import type { ParkingAvenue } from "@/schema";
 
 interface ParkingLocationCardProps {
-  location: ParkingLocation;
+  location: ParkingAvenue;
 }
 
 const ParkingLocationCard = ({
   location,
 }: ParkingLocationCardProps) => {
   const percentage = Math.round(
-    (location.occupiedSpots / location.totalSpots) * 100,
+    (location.currentSpots / location.totalSpots) * 100,
   );
   const isLow = percentage <= 30;
   const isMedium = percentage > 30 && percentage <= 70;
 
-//   const statusVariant =
-//     location.status === "Available"
-//       ? "secondary"
-//       : location.status === "Partial"
-//         ? "outline"
-//         : location.status === "Full"
-//           ? "destructive"
-//           : "default";
 
   return (
     <Card className="overflow-hidden transition-all shadow-md hover:shadow-lg">
@@ -46,12 +38,12 @@ const ParkingLocationCard = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs lowercase">
               {location.type}
             </Badge>
             <Badge
               className={cn(
-                "text-sm",
+                "text-sm capitalize font-medium",
                 isLow
                   ? "bg-green-100 text-green-500"
                   : isMedium
@@ -78,7 +70,7 @@ const ParkingLocationCard = ({
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Occupancy</span>
             <span className="font-medium">
-              {location.occupiedSpots} / {location.totalSpots} spaces
+              {location.currentSpots} / {location.totalSpots} spaces
             </span>
           </div>
 
@@ -97,7 +89,7 @@ const ParkingLocationCard = ({
           </div>
 
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Last updated {location.lastUpdated}</span>
+            <span className=" hidden">Last updated </span>
             <span
               className={cn(
                 "font-medium text-base pt-2",
