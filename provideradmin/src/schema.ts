@@ -21,3 +21,28 @@ export const signUpSchema = z.object({
 });
 
 export type SignUpFormData = z.infer<typeof signUpSchema>;
+
+export const createParkingAvenueSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  address: z.string().min(1, "Address is required"),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  workingHrs: z.string().min(1, "Working hours are required"),
+  hourlyRate: z.coerce.number().min(0),
+  totalSpots: z.coerce.number().int().min(1),
+  status: z.enum(["OPEN", "CLOSED", "FULL"]),
+  currentSpots: z.coerce.number().int().min(0),
+  legalDoc: z
+    .any()
+    .refine((files) => files?.length === 1, "Legal Document Image is required")
+    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, "Max file size is 2MB")
+    .refine(
+      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      "Only .jpg, .jpeg, and .png are supported"
+    ),
+}).refine((data) => data.currentSpots <= data.totalSpots, {
+  message: "Current spots cannot exceed total spots",
+  path: ["currentSpots"],
+});
+
+export type CreateParkingAvenue = z.infer<typeof createParkingAvenueSchema>
