@@ -1,4 +1,4 @@
-import type { Warden } from "@/types";
+import type { Warden } from "@/schema";
 import { Avatar } from "./ui/avatar";
 import { AvatarFallback } from "@radix-ui/react-avatar";
 import { cn } from "@/lib/utils";
@@ -11,19 +11,15 @@ interface WardenCardProps {
 const WardenCard = ({ warden }: WardenCardProps) => {
   const statusStyle =
     {
-      Online: "bg-green-100 text-green-600",
-      Break: "bg-orange-100 text-orange-600",
-      Offline: "bg-gray-100 text-gray-600",
-      Away: "bg-blue-100 text-gray-600",
-    }[warden.status] ?? "bg-gray-100 text-gray-600";
+      ONDUTY: "bg-green-100 text-green-600",
+      OFFDUTY: "bg-gray-100 text-gray-600",
+    }[warden.wardenStatus] ?? "bg-gray-100 text-gray-600";
 
   const statusDotColor =
     {
-      Online: "bg-green-400",
-      Break: "bg-orange-400",
-      Offline: "bg-gray-400",
-      Away: "bg-blue-400",
-    }[warden.status] ?? "bg-gray-400";
+      ONDUTY: "bg-green-400",
+      OFFDUTY: "bg-gray-400",
+    }[warden.wardenStatus] ?? "bg-gray-400";
 
   const initials =
     `${warden.firstName?.[0] ?? ""}${warden.lastName?.[0] ?? ""}`.toUpperCase() ||
@@ -60,30 +56,30 @@ const WardenCard = ({ warden }: WardenCardProps) => {
                 <span
                   className={cn(" size-2 rounded-full", statusDotColor)}
                 ></span>
-                <p className=" text-sm">{warden.status}</p>
+                <p className=" text-sm">{warden.wardenStatus}</p>
               </div>
-              {warden.status === "Online" && (
+              {warden.wardenStatus === "ONDUTY" && (
                 <span className=" text-gray-500 text-sm">Active Now</span>
               )}
             </div>
             <div className=" flex items-center gap-0.5 pt-2 text-gray-500">
               <MapPin className=" size-4" />
-              <p className=" text-xs md:text-sm mr-5 md:mr-2">{warden.location}</p>
+              <p className=" text-xs md:text-sm mr-5 md:mr-2">{warden.currentLocation}</p>
               <Phone className=" size-4" />
-              <p className=" text-xs md:text-sm">{warden.phoneNumber}</p>
+              <p className=" text-xs md:text-sm">{warden.phoneNo}</p>
             </div>
           </div>
         </section>
         <section className=" flex items-center md:justify-center justify-around pt-3 md:pt-0 gap-5">
-          <div className=" flex flex-col justify-center">
+          <div className=" hidden ">
             <div className=" flex items-center gap-1">
               <Star className=" size-4 md:size-5 text-yellow-500" />
-              <p className=" font-medium md:text-base text-sm">{warden.reliabilityScore}%</p>
+              <p className=" font-medium md:text-base text-sm">80%</p>
             </div>
             <p className=" text-gray-500 text-xs md:text-sm">Reliability Score</p>
           </div>
-          <div className=" flex flex-col justify-end">
-            <p className=" font-medium md:text-base text-sm">{warden.shiftsThisWeek}</p>
+          <div className=" hidden">
+            <p className=" font-medium md:text-base text-sm">5</p>
             <p className=" text-xs md:text-sm text-gray-500">Shifts this week</p>
           </div>
           <button className=" outline-0 cursor-pointer p-1 hover:bg-neutral-100">

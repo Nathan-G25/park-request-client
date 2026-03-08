@@ -41,15 +41,15 @@ export interface WardenStatusSummary {
     avgReliability: number;
 }
 
-export interface Warden {
-    firstName: string;
-    lastName: string;
-    status: "Online" | "Break" | "Offline" | "Away";
-    location: string;
-    reliabilityScore: number;
-    shiftsThisWeek: number;
-    phoneNumber: string;
-}
+// export interface Warden {
+//     firstName: string;
+//     lastName: string;
+//     status: "Online" | "Break" | "Offline" | "Away";
+//     location: string;
+//     reliabilityScore: number;
+//     shiftsThisWeek: number;
+//     phoneNumber: string;
+// }
 
 export interface LocationStatus extends ParkingLocation {
     confidence: number;

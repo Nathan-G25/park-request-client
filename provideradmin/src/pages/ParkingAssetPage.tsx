@@ -26,7 +26,7 @@ import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import z, { ZodError } from "zod";
 
-const fetchParkingAvenues = async ():Promise<ParkingAvenue[]> => {
+export const fetchParkingAvenues = async ():Promise<ParkingAvenue[]> => {
   const storedUser = localStorage.getItem("user");
 
   if (!storedUser) {

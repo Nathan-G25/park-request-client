@@ -120,3 +120,21 @@ export const createWardenSchema = z.object({
 });
 
 export type CreateWarden = z.infer<typeof createWardenSchema>;
+
+export const wardenSchema = z.object({
+  id: z.string().uuid(),
+  firstName: z.string(),
+  lastName: z.string(),
+  username: z.string(),
+  phoneNo: z.string(),
+  gender: z.string(),
+  wardenStatus: z.string(),
+  currentLocation: z.string(),
+  residenceArea: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  lastLogin: z.string().nullable(),
+  parkingAvenueId: z.string(),
+});
+
+export type Warden = z.infer<typeof wardenSchema>;
