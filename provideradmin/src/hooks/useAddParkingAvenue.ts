@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 export const useAddParkingAvenue = () => {
     return useMutation({
         mutationFn: async (data: CreateParkingAvenue) => {
-            console.log("🔍 legalDoc debug:", {
+            console.log(" legalDoc debug:", {
                 hasLegalDoc: !!data.legalDoc,
                 isFileList: data.legalDoc instanceof FileList,
                 length: data.legalDoc instanceof FileList ? data.legalDoc.length : 'N/A',

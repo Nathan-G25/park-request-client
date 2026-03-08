@@ -49,8 +49,6 @@ const fetchParkingAvenues = async ():Promise<ParkingAvenue[]> => {
 
   const data = await response.json();
 
-  console.log(data);
-
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error("Session expired. Please login again.");

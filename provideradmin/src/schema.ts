@@ -78,3 +78,45 @@ export const parkingAvenueResponseSchema = z.object({
 });
 
 export type ParkingAvenue = z.infer<typeof parkingAvenueResponseSchema>;
+
+export const createWardenSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50),
+
+  lastName: z
+    .string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50),
+
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+
+  phoneNo: z
+    .string()
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format (e.g., +251...)')
+    .optional()
+    .or(z.literal('')), // Allows empty string in forms without triggering error
+
+  gender: z.enum(["MALE", "FEMALE"]),
+
+  wardenStatus: z.enum(["ONDUTY", "OFFDUTY"]),
+
+  currentLocation: z
+    .string()
+    .min(1, 'Current location is required'),
+
+  residenceArea: z
+    .string()
+    .min(1, 'Residence area is required'),
+
+  parkingAvenueId: z
+    .string()
+    .uuid('Invalid ID format')
+    .min(1, 'Please select a parking avenue'),
+});
+
+export type CreateWarden = z.infer<typeof createWardenSchema>;

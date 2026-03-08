@@ -3,21 +3,85 @@ import { Car, MapPin, MoreHorizontal } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
-import type { ParkingAvenue } from "@/schema";
+import {
+  createWardenSchema,
+  type CreateWarden,
+  type ParkingAvenue,
+} from "@/schema";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+  // DialogTrigger is not needed since we control 'open' state externally
+} from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
+import { useAddWarden } from "@/hooks/useAddWarden";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 interface ParkingLocationCardProps {
   location: ParkingAvenue;
 }
 
-const ParkingLocationCard = ({
-  location,
-}: ParkingLocationCardProps) => {
+const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
+  const { mutate, isPending } = useAddWarden();
+  const [open, setOpen] = useState(false);
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(createWardenSchema),
+    defaultValues: {
+    firstName: "",
+    lastName: "",
+    username: "",
+    phoneNo: "",
+    gender: "MALE",
+    wardenStatus: "OFFDUTY",
+    currentLocation: "",
+    residenceArea: "",
+    parkingAvenueId: location.id,
+  },
+  });
+
+  const onSubmit = (data: CreateWarden) => {
+    mutate(data, {
+      onSuccess: (data) => {
+        toast.success(data.message || "Warden Created Successfully");
+        reset();
+        setOpen(false);
+      },
+    });
+  };
+
   const percentage = Math.round(
     (location.currentSpots / location.totalSpots) * 100,
   );
   const isLow = percentage <= 30;
   const isMedium = percentage > 30 && percentage <= 70;
-
 
   return (
     <Card className="overflow-hidden transition-all shadow-md hover:shadow-lg">
@@ -53,14 +117,19 @@ const ParkingLocationCard = ({
             >
               {location.status}
             </Badge>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {/* Triggers the dialog*/}
+                <DropdownMenuItem onClick={() => setOpen(true)}>
+                  Add warden
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
@@ -105,6 +174,188 @@ const ParkingLocationCard = ({
           </div>
         </div>
       </CardContent>
+
+      {/* Warden Registration form*/}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add Parking Location</DialogTitle>
+            <DialogDescription>
+              Create a new parking location
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="pt-2 flex gap-5 items-center">
+              <div>
+                <Label htmlFor="firstName" className="mb-1">
+                  First Name
+                </Label>
+                <Input {...register("firstName")} id="firstName" />
+                {errors.firstName && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="lastName" className="mb-1">
+                  Last Name
+                </Label>
+                <Input {...register("lastName")} id="lastName" />
+                {errors.lastName && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-5 items-center">
+              <div>
+                <Label htmlFor="username" className="mb-1">
+                  Username
+                </Label>
+                <Input {...register("username")} id="username" />
+                {errors.username && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.username.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="phoneNo" className="mb-1">
+                  Phone No
+                </Label>
+                <Input {...register("phoneNo")} id="phoneNo" />
+                {errors.phoneNo && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.phoneNo.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-5 items-center">
+              <div>
+                <Label htmlFor="gender" className="mb-1">
+                  Gender
+                </Label>
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <SelectTrigger
+                        className={errors.gender ? "border-destructive" : ""}
+                      >
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MALE">Male</SelectItem>
+                        <SelectItem value="FEMALE">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.gender && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.gender.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="wardenStatus">Warden Status</Label>
+                <Controller
+                  control={control}
+                  name="wardenStatus"
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <SelectTrigger
+                        className={errors.wardenStatus ? "border-destructive" : ""}
+                      >
+                        <SelectValue placeholder="Select warden status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ONDUTY">ONDUTY</SelectItem>
+                        <SelectItem value="OFFDUTY">OFFDUTY</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.wardenStatus && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.wardenStatus.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-5 items-center">
+              <div>
+                <Label htmlFor="currentLocation">Current Location</Label>
+                <Input {...register("currentLocation")} id="currentLocation" />
+                {errors.currentLocation && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.currentLocation.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="residenceArea">Residence</Label>
+                <Input {...register("residenceArea")} id="residenceArea" />
+                {errors.residenceArea && (
+                  <p className="text-red-500 text-[10px]">
+                    {errors.residenceArea.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="hidden">
+              <Input 
+                {...register("parkingAvenueId")} 
+                type="hidden" 
+                value={location.id} 
+              />
+              {errors.parkingAvenueId && (
+                <p className="text-red-500 text-[10px]">
+                  {errors.parkingAvenueId.message}
+                </p>
+              )}
+            </div>
+
+            <DialogFooter className="mt-5">
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={() => reset()}
+                >
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Creating...
+                  </>
+                ) : (
+                  "Create"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

@@ -81,10 +81,6 @@ const WardensPage = () => {
       </div>
       <div className=" mt-12 flex justify-between items-center">
         <h2 className=" text-lg font-semibold">All Wardens</h2>
-        <button className=" flex gap-3 items-center justify-center text-white bg-neutral-800 rounded-lg py-3 w-50 font-medium cursor-pointer hover:bg-neutral-700 ">
-          <span>+</span>
-          <span>Add Warden</span>
-        </button>
       </div>
       <div className=" space-y-5 pt-5 pb-6">
         {mockWardens.map((wardens) => (
