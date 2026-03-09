@@ -1,3 +1,17 @@
+export type User = {
+    token: string;
+}
+
+export type AuthState = {
+    isAuthenticated: boolean;
+    user: User | null;
+}
+
+export type AuthAction = 
+|{ type:'LOGIN'; payload: User}
+|{ type:'LOGOUT' }
+
+
 export type NotificationType =
 | "newApplication"
 | "checkIn"

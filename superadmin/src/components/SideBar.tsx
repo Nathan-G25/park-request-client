@@ -70,8 +70,8 @@ const SideBar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuSubButton className=" text-gray-300">
-                  <User2 /> 
-                  <ChevronUp className="ml-auto" />
+                  <User2 className=' text-gray-300!' /> Admin
+                  <ChevronUp className="ml-auto text-gray-300!" />
                 </SidebarMenuSubButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
