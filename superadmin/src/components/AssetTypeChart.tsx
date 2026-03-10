@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -13,18 +14,30 @@ import {
   type ChartConfig,
 } from "./ui/chart";
 import { Pie, PieChart } from "recharts";
+import { fetchOverallStats } from "@/pages/Overview";
+import toast from "react-hot-toast";
 
 const chartConfig = {
   onStreet: { label: "onStreet", color: "hsl(221.2 83.2% 53.3%)" },
   offStreet: { label: "offStreet", color: "hsl(173.4 80.4% 51.4%)" },
 } satisfies ChartConfig;
 
-const chartData = [
-  { type: "onStreet", value: 62 , fill: "var(--color-onStreet)"},
-  { name: "offStreet", value: 38, fill: "var(--color-offStreet)"},
-];
-
 const AssetTypeChart = () => {
+  const { data: assetType, error } = useQuery({
+    queryKey: ["assetTypeDistribution"],
+    queryFn: fetchOverallStats,
+    retry: false,
+  });
+
+  if (error) {
+    toast.error("Failed to load stats. Please try again later.");
+    console.error("Error fetching stats:", error);
+  }
+
+  const chartData = [
+    { type: "onStreet", value: assetType?.onStreetSegments, fill: "var(--color-onStreet)" },
+    { name: "offStreet", value: assetType?.offStreetLots, fill: "var(--color-offStreet)" },
+  ];
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
@@ -41,10 +54,7 @@ const AssetTypeChart = () => {
           className="mx-auto aspect-square max-h-62.5"
         >
           <PieChart>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent/>}
-            />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Pie
               data={chartData}
               dataKey="value"

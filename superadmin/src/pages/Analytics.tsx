@@ -12,6 +12,7 @@ const analytics= {
 }
 
 const Analytics = () => {
+  
   return (
     <main>
       <header className=" flex flex-col gap-1">

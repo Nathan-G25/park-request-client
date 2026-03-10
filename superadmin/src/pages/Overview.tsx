@@ -1,7 +1,9 @@
 import NotificationList from "@/components/NotificationList";
 import StatCard from "@/components/StatCard";
 import WeeklyTrendChart from "@/components/WeeklyTrendChart";
+import type { OverallStats } from "@/schema";
 import type { Notification } from "@/types";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   Building2,
@@ -12,6 +14,7 @@ import {
   Spline,
   Users,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const notifications: Notification[] = [
   {
@@ -52,7 +55,37 @@ const notifications: Notification[] = [
   },
 ];
 
+export const fetchOverallStats = async (): Promise<OverallStats> => {
+  const response = await fetch("http://localhost:3000/admin/dashboard", {
+    method: "GET",
+    headers: {
+      "Content-type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    }
+    throw new Error("Could not fetch dashboard stats");
+  }
+  return result.cards;
+};
+
 const Overview = () => {
+  const { data: stats, error } = useQuery({
+    queryKey: ["globalStats"],
+    queryFn: fetchOverallStats,
+    retry: false,
+  });
+
+  if (error) {
+    toast.error("Failed to load dashboard stats. Please try again later.");
+    console.error("Error fetching dashboard stats:", error);
+  }
+
   return (
     <main className=" min-h-screen">
       <header className=" flex flex-col gap-1">
@@ -66,21 +99,21 @@ const Overview = () => {
       <section className=" mt-10 grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
         <StatCard
           title="Total Providers"
-          value={48}
+          value={stats ? stats?.totalProviders : 0}
           icon={Building2}
           trend={{ value: 8, label: "vs last week" }}
         />
 
         <StatCard
           title="Active Locations"
-          value="1,284"
+          value={stats ? stats?.activeLocations : 0}
           icon={MapPin}
           trend={{ value: 12, label: "vs last week" }}
         />
 
         <StatCard
           title="On-street Segments"
-          value={847}
+          value={stats ? stats.onStreetSegments : 0}
           description="Across 23 zones"
           icon={Spline}
           className="lg:col-span-2 xl:col-span-1"
@@ -88,7 +121,7 @@ const Overview = () => {
 
         <StatCard
           title="Off-street Lots"
-          value={437}
+          value={stats ? stats.offStreetLots : 0}
           icon={ParkingSquare}
           description="12,450 total spaces"
         />
@@ -107,8 +140,8 @@ const Overview = () => {
         />
 
         <StatCard
-          title="Live Reservations"
-          value="1,847"
+          title="Active Reservations"
+          value={stats ? stats.activeReservations : 0}
           icon={CalendarCheck}
           trend={{ value: 23, label: "vs last week" }}
         />
@@ -131,7 +164,7 @@ const Overview = () => {
               On-street vs Off-street comparison
             </p>
           </div>
-          <WeeklyTrendChart/>
+          <WeeklyTrendChart />
         </section>
         {/* Live notfication */}
         <section className="flex flex-col justify-center px-5 py-3 rounded-md shadow-lg border border-gray-200 bg-white/90">
