@@ -1,4 +1,4 @@
-import type { Provider } from "@/types";
+// import type { ProviderMock } from "@/types";
 import { useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
@@ -14,90 +14,162 @@ import {
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { providerSchema, type Provider } from "@/schema";
+import z, { ZodError } from "zod";
+import ProviderTableSkeleton from "@/utils/skeletons/ProviderTableSkeleton";
 
-const providers: Provider[] = [
-  {
-    id: 1,
-    name: "Addis Parking Solutions",
-    email: "admin@addisparking.et",
-    locations: 45,
-    spaces: 2340,
-    status: "approved",
-  },
-  {
-    id: 2,
-    name: "Meskel Square Garages",
-    email: "contact@meskelgarages.et",
-    locations: 23,
-    spaces: 1250,
-    status: "approved",
-  },
-  {
-    id: 3,
-    name: "Bole Parking PLC",
-    email: "hello@boleparking.et",
-    locations: 10,
-    spaces: 50,
-    status: "pending",
-  },
-  {
-    id: 4,
-    name: "Piassa Auto Park",
-    email: "ops@piassapark.et",
-    locations: 12,
-    spaces: 680,
-    status: "rejected",
-  },
-  {
-    id: 5,
-    name: "Kazanchis Parking",
-    email: "info@kazanchispark.et",
-    locations: 8,
-    spaces: 920,
-    status: "approved",
-  },
-  {
-    id: 6,
-    name: "Merkato Smart Park",
-    email: "support@merkatopark.et",
-    locations: 10,
-    spaces: 100,
-    status: "pending",
-  },
-];
+// const providers: ProviderMock[] = [
+//   {
+//     id: 1,
+//     name: "Addis Parking Solutions",
+//     email: "admin@addisparking.et",
+//     locations: 45,
+//     spaces: 2340,
+//     status: "approved",
+//   },
+//   {
+//     id: 2,
+//     name: "Meskel Square Garages",
+//     email: "contact@meskelgarages.et",
+//     locations: 23,
+//     spaces: 1250,
+//     status: "approved",
+//   },
+//   {
+//     id: 3,
+//     name: "Bole Parking PLC",
+//     email: "hello@boleparking.et",
+//     locations: 10,
+//     spaces: 50,
+//     status: "pending",
+//   },
+//   {
+//     id: 4,
+//     name: "Piassa Auto Park",
+//     email: "ops@piassapark.et",
+//     locations: 12,
+//     spaces: 680,
+//     status: "rejected",
+//   },
+//   {
+//     id: 5,
+//     name: "Kazanchis Parking",
+//     email: "info@kazanchispark.et",
+//     locations: 8,
+//     spaces: 920,
+//     status: "approved",
+//   },
+//   {
+//     id: 6,
+//     name: "Merkato Smart Park",
+//     email: "support@merkatopark.et",
+//     locations: 10,
+//     spaces: 100,
+//     status: "pending",
+//   },
+// ];
 
-type FilterValue = "All" | "Approved" | "Rejected" | "Pending";
+type FilterValue = "all" | "approved" | "rejected" | "underreview";
 
-const ProviderTable = () => {
-  const [filter, setFilter] = useState<FilterValue>("All");
-  const [searchTerm, setSearchTerm] = useState("");
+const fetchProviders = async (): Promise<Provider[]> => {
+  const storedUser = localStorage.getItem("user");
 
-  const filteredData = providers.filter((item) =>
-    filter === "All" ? true : item.status === filter,
+  if (!storedUser) {
+    throw new Error("No user found");
+  }
+
+  const user = JSON.parse(storedUser);
+  const token = user.accessToken;
+
+  if (!token) {
+    throw new Error("No accesstoken found");
+  }
+
+  const response = await fetch(
+    "http://localhost:3000/admin/ownerverificationstatus",
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
   );
 
+  const result = await response.json();
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Session expired. Please login again.");
+    }
+    throw new Error("Could not fetch profile");
+  }
+  try {
+    const parsedData = z.array(providerSchema).parse(result);
+    return parsedData;
+  } catch (err) {
+    if (err instanceof ZodError) {
+      console.error("Zod validation failed on API response:", err.message);
+    }
+    return [];
+  }
+};
+
+const ProviderTable = () => {
+  const [filter, setFilter] = useState<FilterValue>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const { data: provider,error, isLoading, refetch} = useQuery({
+    queryKey: ["provider"],
+    queryFn: fetchProviders,
+    retry: false,
+  });
+
+  // const filteredData = provider?.filter((item) =>
+  //   filter === "all" ? true : item.isVerified.toLowerCase() === filter,
+  // );
+
   const filteredProviders = useMemo(() => {
-    return providers.filter((p) => {
+    return provider?.filter((p) => {
       const matchesSearch =
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.email.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesTab =
-        filter === "All" || p.status.toLowerCase() === filter.toLowerCase();
+        filter === "all" || p.isVerified.toLowerCase() === filter.toLowerCase();
 
       return matchesSearch && matchesTab;
     });
-  }, [searchTerm, filter]);
+  }, [provider, searchTerm, filter]);
 
   const getCount = (status: string) =>
-    providers.filter((p) =>
-      status === "all" ? true : p.status.toLowerCase() === status.toLowerCase(),
+    provider?.filter((p) =>
+      status === "all"
+        ? true
+        : p.isVerified.toLowerCase() === status.toLowerCase(),
     ).length;
   const statusStyle: Record<string, string> = {
-    "Approved": "bg-green-100 text-green-800 hover:bg-green-100/80",
-    "Rejected": "bg-red-100 text-red-800 hover:bg-blue-100/80 ",
-    "Pending": "bg-orange-100 text-orange-800 hover:bg-gray-100/80",
+    APPROVED: "bg-green-100 text-green-800 hover:bg-green-100/80",
+    REJECTED: "bg-red-100 text-red-800 hover:bg-blue-100/80 ",
+    UNDERREVIEW: "bg-orange-100 text-orange-800 hover:bg-gray-100/80",
   };
+
+  if (isLoading) {
+    return <ProviderTableSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-md border p-6 text-center">
+        <p className="text-muted-foreground mb-4">
+          Failed to load providers: {error.message}
+        </p>
+        <Button onClick={() => refetch()} variant="outline">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border">
@@ -113,7 +185,7 @@ const ProviderTable = () => {
       <div className="flex items-center justify-between border-b px-4 py-3">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterValue)}>
           <TabsList>
-            <TabsTrigger value="All">
+            <TabsTrigger value="all">
               All <Badge variant="outline">{getCount("all")}</Badge>
             </TabsTrigger>
             <TabsTrigger value="approved">
@@ -122,9 +194,9 @@ const ProviderTable = () => {
             <TabsTrigger value="rejected">
               Rejected<Badge variant="outline">{getCount("rejected")}</Badge>
             </TabsTrigger>
-            <TabsTrigger value="suspended">
+            {/* <TabsTrigger value="suspended">
               Suspended<Badge variant="outline">{getCount("suspended")}</Badge>
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
         </Tabs>
 
@@ -134,7 +206,7 @@ const ProviderTable = () => {
         </Button>
       </div>
 
-      {filteredData.length === 0 ? (
+      {filteredProviders && filteredProviders.length === 0 ? (
         <div className="py-10 text-center text-muted-foreground">
           No reservations match the selected filter.
         </div>
@@ -158,7 +230,7 @@ const ProviderTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProviders.length > 0 ? (
+            {filteredProviders && filteredProviders.length > 0 ? (
               filteredProviders.map((provider) => (
                 <TableRow
                   key={provider.id}
@@ -170,25 +242,26 @@ const ProviderTable = () => {
                     </div>
                     <div className="flex flex-col">
                       <span className="font-medium text-slate-900">
-                        {provider.name}
+                        {provider.firstName} {provider.lastName}
                       </span>
                       <span className="text-xs text-slate-500">
                         {provider.email}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    {provider.locations}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {provider.spaces.toLocaleString()}
-                  </TableCell>
+                  <TableCell className="text-center">20</TableCell>
+                  <TableCell className="text-center">400</TableCell>
                   <TableCell>
-                    <p className={cn(
-                      "px-3 py-1 rounded-2xl w-20 text-xs text-center font-medium",
-                      statusStyle[provider.status.charAt(0).toUpperCase() + provider.status.slice(1) as FilterValue] || ""
-                    )}>
-                      {provider.status}
+                    <p
+                      className={cn(
+                        "px-3 py-1 rounded-2xl w-fit text-xs lowercase text-center font-medium",
+                        statusStyle[
+                          (provider.isVerified.charAt(0).toUpperCase() +
+                            provider.isVerified.slice(1)) as FilterValue
+                        ] || "",
+                      )}
+                    >
+                      {provider.isVerified}
                     </p>
                   </TableCell>
                   <TableCell className="text-right">

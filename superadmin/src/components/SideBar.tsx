@@ -1,6 +1,33 @@
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSubButton } from './ui/sidebar'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
-import { Calendar, ChartColumn, ChevronUp, CircleParking, FileText, LayoutDashboard, LogOut, Shield, User2 } from 'lucide-react'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSubButton,
+} from "./ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
+  Calendar,
+  ChartColumn,
+  ChevronUp,
+  CircleParking,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Shield,
+  User2,
+} from "lucide-react";
+import { useLogout } from "@/hooks/useLogout";
 
 const items = [
   {
@@ -28,7 +55,7 @@ const items = [
     url: "/analytics",
     icon: ChartColumn,
   },
-   {
+  {
     title: "Audit Logs",
     url: "/audit-logs",
     icon: FileText,
@@ -36,6 +63,8 @@ const items = [
 ];
 
 const SideBar = () => {
+  const { mutate: logout } = useLogout();
+
   return (
     <Sidebar collapsible="icon" className=" w-64 rounded-r-md">
       <SidebarContent>
@@ -58,7 +87,7 @@ const SideBar = () => {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )
-                )
+                ),
               )}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -70,7 +99,7 @@ const SideBar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuSubButton className=" text-gray-300">
-                  <User2 className=' text-gray-300!' /> Admin
+                  <User2 className=" text-gray-300!" /> Admin
                   <ChevronUp className="ml-auto text-gray-300!" />
                 </SidebarMenuSubButton>
               </DropdownMenuTrigger>
@@ -83,8 +112,11 @@ const SideBar = () => {
                   <User2 />
                   <span>Account</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem variant="destructive">
-                  <LogOut/>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => logout()}
+                >
+                  <LogOut />
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -93,7 +125,7 @@ const SideBar = () => {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  )
-}
+  );
+};
 
-export default SideBar
+export default SideBar;

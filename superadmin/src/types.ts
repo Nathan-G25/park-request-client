@@ -27,7 +27,7 @@ export interface Notification {
     timeAgo: string;
 }   
 
-export interface Provider {
+export interface ProviderMock {
     id: number;
     name: string;
     email: string;
