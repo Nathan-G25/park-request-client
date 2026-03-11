@@ -1,4 +1,7 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import ProviderTable from "@/components/ProviderTable";
+import ParkingAvenuesTable from "@/components/ParkingAvenuesTable";
 
 const Providers = () => {
   return (
@@ -17,8 +20,21 @@ const Providers = () => {
           <span>Add New Provider</span>
         </button>
       </header>
-      <section className=" mt-10">
-        <ProviderTable/>
+      <section className=" mt-8 w-full">
+        <div className=" w-full  mb-3">
+          <Tabs defaultValue="providers">
+            <TabsList>
+              <TabsTrigger value="providers">Providers</TabsTrigger>
+              <TabsTrigger value="parkingAvenues">Parking Avenues</TabsTrigger>
+            </TabsList>
+            <TabsContent value="providers" className=" mt-5 w-full">
+              <ProviderTable />
+            </TabsContent>
+            <TabsContent value="parkingAvenues" className=" mt-5 w-full">
+              <ParkingAvenuesTable />
+            </TabsContent>
+          </Tabs>
+        </div>
       </section>
     </main>
   );
