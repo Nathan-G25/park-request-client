@@ -21,12 +21,21 @@ import {
 } from "@/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import z, { ZodError } from "zod";
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  Pin,
+  useMap,
+  type MapMouseEvent,
+} from "@vis.gl/react-google-maps";
+import { LocateFixed } from "lucide-react";
 
-export const fetchParkingAvenues = async ():Promise<ParkingAvenue[]> => {
+export const fetchParkingAvenues = async (): Promise<ParkingAvenue[]> => {
   const storedUser = localStorage.getItem("user");
 
   if (!storedUser) {
@@ -64,7 +73,69 @@ export const fetchParkingAvenues = async ():Promise<ParkingAvenue[]> => {
     }
     return [];
   }
+};
 
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_ID;
+
+const MapPicker = ({
+  onLocationSelect,
+  currentPos,
+}: {
+  onLocationSelect: (lat: number, lng: number) => void;
+  currentPos?: { lat: number; lng: number }
+}) => {
+  const map = useMap();
+
+  const handleMapClick = useCallback(
+    (e: MapMouseEvent) => {
+      if (e.detail.latLng) {
+        onLocationSelect(e.detail.latLng.lat, e.detail.latLng.lng);
+      }
+    },
+    [onLocationSelect],
+  );
+
+  const handleUseCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((postion) => {
+        const { latitude, longitude } = postion.coords;
+        onLocationSelect(latitude, longitude);
+        if (map) map.panTo({ lat: latitude, lng: longitude });
+      });
+    } else {
+      toast.error("Browser does not support geolocation");
+    }
+  };
+
+  return (
+    <div className=" relative w-full h-60 rounded-md border overflow-hidden mt-2">
+      <Map
+        defaultZoom={12}
+        defaultCenter={{ lat: 0, lng: 0 }}
+        center={currentPos}
+        mapId={MAP_ID}
+        onClick={handleMapClick}
+        gestureHandling="greedy"
+        disableDefaultUI
+      >
+        {currentPos && (
+          <AdvancedMarker position={currentPos}>
+            <Pin background={"#000"} glyphColor={"#fff"} borderColor={"#000"} />
+          </AdvancedMarker>
+        )}
+      </Map>
+      <Button
+        type="button"
+        variant="secondary"
+        size="icon"
+        className="absolute bottom-2 right-2 h-8 w-8 shadow-md"
+        onClick={handleUseCurrentLocation}
+      >
+        <LocateFixed className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 };
 
 const ParkingAssetPage = () => {
@@ -85,10 +156,25 @@ const ParkingAssetPage = () => {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(createParkingAvenueSchema),
   });
+
+  const watchedLat = watch("latitude");
+  const watchedLng = watch("longitude");
+
+  const currentPos =
+    watchedLat && watchedLng
+      ? { lat: parseFloat(watchedLat), lng: parseFloat(watchedLng) }
+      : null;
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setValue("latitude", lat.toFixed(6));
+    setValue("longitude", lng.toFixed(6));
+  };
 
   const onSubmit = (data: CreateParkingAvenue) => {
     mutate(data, {
@@ -124,159 +210,168 @@ const ParkingAssetPage = () => {
             </DialogHeader>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="pt-2 flex gap-5 items-center">
-                <div>
-                  <Label htmlFor="name" className="mb-1">
-                    Name
-                  </Label>
-                  <Input {...register("name")} id="name" />
-                  {errors.name && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.name.message}
-                    </p>
-                  )}
+              <APIProvider apiKey={API_KEY}>
+                <div className="pt-2 flex gap-5 items-center">
+                  <div>
+                    <Label htmlFor="name" className="mb-1">
+                      Name
+                    </Label>
+                    <Input {...register("name")} id="name" />
+                    {errors.name && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.name.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="address" className="mb-1">
+                      Address
+                    </Label>
+                    <Input {...register("address")} id="address" />
+                    {errors.address && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.address.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="address" className="mb-1">
-                    Address
-                  </Label>
-                  <Input {...register("address")} id="address" />
-                  {errors.address && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.address.message}
-                    </p>
-                  )}
+                <div className="space-y-1">
+                  <Label>Pin Location</Label>
+                  <MapPicker
+                    onLocationSelect={handleLocationSelect}
+                    currentPos={currentPos ? currentPos : undefined}
+                  />
                 </div>
-              </div>
 
-              <div className="pt-2 flex gap-5 items-center">
-                <div>
-                  <Label htmlFor="latitude" className="mb-1">
-                    Latitude
-                  </Label>
-                  <Input {...register("latitude")} id="latitude" />
-                  {errors.latitude && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.latitude.message}
-                    </p>
-                  )}
+                <div className="pt-2 flex gap-5 items-center">
+                  <div>
+                    <Label htmlFor="latitude" className="mb-1">
+                      Latitude
+                    </Label>
+                    <Input {...register("latitude")} id="latitude" readOnly placeholder="Select on Map"/>
+                    {errors.latitude && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.latitude.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="longitude" className="mb-1">
+                      Longitude
+                    </Label>
+                    <Input {...register("longitude")} id="longitude" readOnly placeholder="Select on Map"/>
+                    {errors.longitude && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.longitude.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="longitude" className="mb-1">
-                    Longitude
-                  </Label>
-                  <Input {...register("longitude")} id="longitude" />
-                  {errors.longitude && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.longitude.message}
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              <div className="pt-2 flex gap-5 items-center">
-                <div>
-                  <Label htmlFor="workingHours" className="mb-1">
-                    Working Hours
-                  </Label>
-                  <Input {...register("workingHrs")} id="workingHours" />
-                  {errors.workingHrs && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.workingHrs.message}
-                    </p>
-                  )}
+                <div className="pt-2 flex gap-5 items-center">
+                  <div>
+                    <Label htmlFor="workingHours" className="mb-1">
+                      Working Hours
+                    </Label>
+                    <Input {...register("workingHrs")} id="workingHours" />
+                    {errors.workingHrs && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.workingHrs.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="hourlyRate">Hourly Rate</Label>
+                    <Input {...register("hourlyRate")} id="hourlyRate" />
+                    {errors.hourlyRate && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.hourlyRate.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="hourlyRate">Hourly Rate</Label>
-                  <Input {...register("hourlyRate")} id="hourlyRate" />
-                  {errors.hourlyRate && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.hourlyRate.message}
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              <div className="pt-2 flex gap-5 items-center">
-                <div>
-                  <Label htmlFor="totalSpots">Total Spots</Label>
-                  <Input {...register("totalSpots")} id="totalSpots" />
-                  {errors.totalSpots && (
+                <div className="pt-2 flex gap-5 items-center">
+                  <div>
+                    <Label htmlFor="totalSpots">Total Spots</Label>
+                    <Input {...register("totalSpots")} id="totalSpots" />
+                    {errors.totalSpots && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.totalSpots.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Input {...register("status")} id="status" />
+                    {errors.status && (
+                      <p className="text-red-500 text-[10px]">
+                        {errors.status.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="my-2">
+                  <Label htmlFor="currentSpots">Current Spots</Label>
+                  <Input {...register("currentSpots")} id="currentSpots" />
+                  {errors.currentSpots && (
                     <p className="text-red-500 text-[10px]">
-                      {errors.totalSpots.message}
+                      {errors.currentSpots.message}
                     </p>
                   )}
                 </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Input {...register("status")} id="status" />
-                  {errors.status && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.status.message}
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              <div className="my-2">
-                <Label htmlFor="currentSpots">Current Spots</Label>
-                <Input {...register("currentSpots")} id="currentSpots" />
-                {errors.currentSpots && (
-                  <p className="text-red-500 text-[10px]">
-                    {errors.currentSpots.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="my-2">
-                <Label htmlFor="legalDocument">Legal Document</Label>
-                <Input
-                  {...register("legalDoc", {
-                    required: "Legal document is required",
-                    validate: {
-                      notEmpty: (value) => {
-                        console.log("File validation:", {
-                          value,
-                          length: value?.length,
-                          isFileList: value instanceof FileList,
-                        });
-                        return value?.length > 0 || "Please select a file";
+                <div className="my-2">
+                  <Label htmlFor="legalDocument">Legal Document</Label>
+                  <Input
+                    {...register("legalDoc", {
+                      required: "Legal document is required",
+                      validate: {
+                        notEmpty: (value) => {
+                          console.log("File validation:", {
+                            value,
+                            length: value?.length,
+                            isFileList: value instanceof FileList,
+                          });
+                          return value?.length > 0 || "Please select a file";
+                        },
                       },
-                    },
-                  })}
-                  type="file"
-                  id="legalDocument"
-                  accept=".jpg,.jpeg,.png"
-                />
-                {errors.legalDoc && (
-                  <p className="text-red-500 text-[10px]">
-                    {String(errors.legalDoc.message)}
-                  </p>
-                )}
-              </div>
-
-              <DialogFooter className="mt-5">
-                <DialogClose asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isPending}
-                    onClick={() => reset()}
-                  >
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? (
-                    <>
-                      <span className="animate-spin mr-2">⏳</span>
-                      Creating...
-                    </>
-                  ) : (
-                    "Create"
+                    })}
+                    type="file"
+                    id="legalDocument"
+                    accept=".jpg,.jpeg,.png"
+                  />
+                  {errors.legalDoc && (
+                    <p className="text-red-500 text-[10px]">
+                      {String(errors.legalDoc.message)}
+                    </p>
                   )}
-                </Button>
-              </DialogFooter>
+                </div>
+
+                <DialogFooter className="mt-5">
+                  <DialogClose asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isPending}
+                      onClick={() => reset()}
+                    >
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Creating...
+                      </>
+                    ) : (
+                      "Create"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </APIProvider>
             </form>
           </DialogContent>
         </Dialog>
