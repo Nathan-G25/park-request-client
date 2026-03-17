@@ -179,9 +179,9 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Add Parking Location</DialogTitle>
+            <DialogTitle>Add Warden</DialogTitle>
             <DialogDescription>
-              Create a new parking location
+              Add a new warden for this parking avenue
             </DialogDescription>
           </DialogHeader>
 
@@ -237,7 +237,7 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
             </div>
 
             <div className="pt-2 flex gap-5 items-center">
-              <div>
+              <div className=" w-full">
                 <Label htmlFor="gender" className="mb-1">
                   Gender
                 </Label>
@@ -250,7 +250,7 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                       value={field.value}
                     >
                       <SelectTrigger
-                        className={errors.gender ? "border-destructive" : ""}
+                        className={errors.gender ? "border-destructive w-full" : "w-full"}
                       >
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
@@ -267,7 +267,7 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                   </p>
                 )}
               </div>
-              <div>
+              <div className=" w-full">
                 <Label htmlFor="wardenStatus">Warden Status</Label>
                 <Controller
                   control={control}
@@ -278,7 +278,7 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                       value={field.value}
                     >
                       <SelectTrigger
-                        className={errors.wardenStatus ? "border-destructive" : ""}
+                        className={errors.wardenStatus ? "border-destructive w-full" : "w-full"}
                       >
                         <SelectValue placeholder="Select warden status" />
                       </SelectTrigger>

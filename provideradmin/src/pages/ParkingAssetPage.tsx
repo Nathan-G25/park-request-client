@@ -20,8 +20,8 @@ import {
   type ParkingAvenue,
 } from "@/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useCallback, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import z, { ZodError } from "zod";
@@ -33,7 +33,30 @@ import {
   useMap,
   type MapMouseEvent,
 } from "@vis.gl/react-google-maps";
-import { LocateFixed } from "lucide-react";
+import { Check, ChevronsUpDown, LocateFixed } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import usePlacesAutocomplete, {
+  getGeocode,
+  getLatLng,
+} from "use-places-autocomplete";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 export const fetchParkingAvenues = async (): Promise<ParkingAvenue[]> => {
   const storedUser = localStorage.getItem("user");
@@ -78,14 +101,21 @@ export const fetchParkingAvenues = async (): Promise<ParkingAvenue[]> => {
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_ID;
 
+// Map picker element in the bottom right corner of the map
 const MapPicker = ({
   onLocationSelect,
   currentPos,
 }: {
   onLocationSelect: (lat: number, lng: number) => void;
-  currentPos?: { lat: number; lng: number }
+  currentPos?: { lat: number; lng: number };
 }) => {
   const map = useMap();
+
+  useEffect(() => {
+    if (map && currentPos) {
+      map.panTo(currentPos);
+    }
+  }, [map]);
 
   const handleMapClick = useCallback(
     (e: MapMouseEvent) => {
@@ -96,6 +126,7 @@ const MapPicker = ({
     [onLocationSelect],
   );
 
+  // handles the retrieval of the users current location
   const handleUseCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((postion) => {
@@ -112,12 +143,11 @@ const MapPicker = ({
     <div className=" relative w-full h-60 rounded-md border overflow-hidden mt-2">
       <Map
         defaultZoom={12}
-        defaultCenter={{ lat: 0, lng: 0 }}
-        center={currentPos}
+        defaultCenter={{ lat: 9.0227, lng: 38.7468 }}
         mapId={MAP_ID}
         onClick={handleMapClick}
-        gestureHandling="greedy"
         disableDefaultUI
+        gestureHandling="greedy"
       >
         {currentPos && (
           <AdvancedMarker position={currentPos}>
@@ -151,6 +181,7 @@ const ParkingAssetPage = () => {
 
   const { mutate, isPending } = useAddParkingAvenue();
   const [open, setOpen] = useState(false);
+  const [addressOpen, setAddressOpen] = useState(false);
 
   const {
     register,
@@ -158,13 +189,35 @@ const ParkingAssetPage = () => {
     reset,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(createParkingAvenueSchema),
   });
 
-  const watchedLat = watch("latitude");
-  const watchedLng = watch("longitude");
+  const {
+    ready,
+    value: searchValue,
+    suggestions: { status, data },
+    setValue: setSearchValue,
+    clearSuggestions,
+  } = usePlacesAutocomplete({
+    requestOptions: { componentRestrictions: { country: "et" } },
+    debounce: 300,
+    callbackName: "initMap",
+  });
+
+  const watchedLat = watch("latitude") as string;
+  const watchedLng = watch("longitude") as string;
+
+  const startTime = watch("startTime");
+  const endTime = watch("endTime");
+
+  useEffect(() => {
+    if (startTime && endTime) {
+      setValue("workingHrs", `${startTime} - ${endTime}`);
+    }
+  }, [startTime, endTime, setValue]);
 
   const currentPos =
     watchedLat && watchedLng
@@ -174,6 +227,20 @@ const ParkingAssetPage = () => {
   const handleLocationSelect = (lat: number, lng: number) => {
     setValue("latitude", lat.toFixed(6));
     setValue("longitude", lng.toFixed(6));
+  };
+
+  const handleAddressSelect = async (description: string) => {
+    setSearchValue(description, false);
+    setAddressOpen(false);
+    clearSuggestions();
+
+    try {
+      const results = await getGeocode({ address: description });
+      const { lat, lng } = getLatLng(results[0]);
+      handleLocationSelect(lat, lng);
+    } catch (error) {
+      console.error("Geocoding error:", error);
+    }
   };
 
   const onSubmit = (data: CreateParkingAvenue) => {
@@ -201,7 +268,7 @@ const ParkingAssetPage = () => {
             <Button onClick={() => setOpen(true)}>Add Parking Location</Button>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-sm">
+          <DialogContent className="sm:max-w-xl">
             <DialogHeader>
               <DialogTitle>Add Parking Location</DialogTitle>{" "}
               <DialogDescription>
@@ -209,10 +276,10 @@ const ParkingAssetPage = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <APIProvider apiKey={API_KEY}>
-                <div className="pt-2 flex gap-5 items-center">
-                  <div>
+            <form onSubmit={handleSubmit(onSubmit)} className=" w-full">
+              <APIProvider apiKey={API_KEY} libraries={["places"]}>
+                <div className="pt-2 flex gap-5 md: justify-between items-center w-full">
+                  <div className=" w-full">
                     <Label htmlFor="name" className="mb-1">
                       Name
                     </Label>
@@ -223,11 +290,15 @@ const ParkingAssetPage = () => {
                       </p>
                     )}
                   </div>
-                  <div>
+                  <div className=" w-full">
                     <Label htmlFor="address" className="mb-1">
                       Address
                     </Label>
-                    <Input {...register("address")} id="address" />
+                    <Input
+                      {...register("address")}
+                      className=" "
+                      id="address"
+                    />
                     {errors.address && (
                       <p className="text-red-500 text-[10px]">
                         {errors.address.message}
@@ -237,6 +308,55 @@ const ParkingAssetPage = () => {
                 </div>
                 <div className="space-y-1">
                   <Label>Pin Location</Label>
+                  <Popover open={addressOpen} onOpenChange={setAddressOpen}>
+                    <PopoverTrigger asChild>
+                      {ready && (
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={`w-full justify-between font-normal text-muted-foreground`}
+                          disabled={!ready}
+                        >
+                          {searchValue || "Select address..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      )}
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-(--radix-popover-trigger-width) p-0 z-50"
+                      align="start"
+                    >
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder="Search address..."
+                          value={searchValue}
+                          onValueChange={(val) => {
+                            setSearchValue(val);
+                          }}
+                        />
+                        <CommandList>
+                          {status === "OK" && (
+                            <CommandGroup>
+                              {data.map(({ place_id, description }) => (
+                                <CommandItem
+                                  key={place_id}
+                                  value={description}
+                                  onSelect={() =>
+                                    handleAddressSelect(description)
+                                  }
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${watch("address") === description ? "opacity-100" : "opacity-0"}`}
+                                  />
+                                  {description}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <MapPicker
                     onLocationSelect={handleLocationSelect}
                     currentPos={currentPos ? currentPos : undefined}
@@ -244,22 +364,34 @@ const ParkingAssetPage = () => {
                 </div>
 
                 <div className="pt-2 flex gap-5 items-center">
-                  <div>
+                  <div className=" w-full">
                     <Label htmlFor="latitude" className="mb-1">
                       Latitude
                     </Label>
-                    <Input {...register("latitude")} id="latitude" readOnly placeholder="Select on Map"/>
+                    <Input
+                      {...register("latitude")}
+                      id="latitude"
+                      readOnly
+                      placeholder="Select on Map"
+                      className=" text-gray-400"
+                    />
                     {errors.latitude && (
                       <p className="text-red-500 text-[10px]">
                         {errors.latitude.message}
                       </p>
                     )}
                   </div>
-                  <div>
+                  <div className=" w-full">
                     <Label htmlFor="longitude" className="mb-1">
                       Longitude
                     </Label>
-                    <Input {...register("longitude")} id="longitude" readOnly placeholder="Select on Map"/>
+                    <Input
+                      {...register("longitude")}
+                      id="longitude"
+                      readOnly
+                      placeholder="Select on Map"
+                      className=" text-gray-400"
+                    />
                     {errors.longitude && (
                       <p className="text-red-500 text-[10px]">
                         {errors.longitude.message}
@@ -269,20 +401,45 @@ const ParkingAssetPage = () => {
                 </div>
 
                 <div className="pt-2 flex gap-5 items-center">
-                  <div>
+                  <div className=" w-full">
                     <Label htmlFor="workingHours" className="mb-1">
                       Working Hours
                     </Label>
-                    <Input {...register("workingHrs")} id="workingHours" />
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <Input
+                          type="time"
+                          {...register("startTime")}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                      <span className="text-muted-foreground">to</span>
+                      <div>
+                        <Input
+                          type="time"
+                          {...register("endTime")}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    <Input
+                      {...register("workingHrs")}
+                      id="workingHours"
+                      className=" hidden"
+                    />
                     {errors.workingHrs && (
                       <p className="text-red-500 text-[10px]">
                         {errors.workingHrs.message}
                       </p>
                     )}
                   </div>
-                  <div>
+                  <div className=" w-full">
                     <Label htmlFor="hourlyRate">Hourly Rate</Label>
-                    <Input {...register("hourlyRate")} id="hourlyRate" />
+                    <Input
+                      {...register("hourlyRate")}
+                      type="number"
+                      id="hourlyRate"
+                    />
                     {errors.hourlyRate && (
                       <p className="text-red-500 text-[10px]">
                         {errors.hourlyRate.message}
@@ -292,61 +449,89 @@ const ParkingAssetPage = () => {
                 </div>
 
                 <div className="pt-2 flex gap-5 items-center">
-                  <div>
+                  <div className=" w-full">
                     <Label htmlFor="totalSpots">Total Spots</Label>
-                    <Input {...register("totalSpots")} id="totalSpots" />
+                    <Input
+                      {...register("totalSpots")}
+                      type="number"
+                      id="totalSpots"
+                    />
                     {errors.totalSpots && (
                       <p className="text-red-500 text-[10px]">
                         {errors.totalSpots.message}
                       </p>
                     )}
                   </div>
-                  <div>
+                  <div className=" w-full">
                     <Label htmlFor="status">Status</Label>
-                    <Input {...register("status")} id="status" />
-                    {errors.status && (
+                    <Controller
+                      control={control}
+                      name="status"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger
+                            className={
+                              errors.status
+                                ? "border-destructive w-full"
+                                : "w-full"
+                            }
+                          >
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="OPEN">OPEN</SelectItem>
+                            <SelectItem value="CLOSED">CLOSED</SelectItem>
+                            <SelectItem value="FULL">FULL</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className=" flex items-center justify-between my-2 gap-5">
+                  <div className="w-full">
+                    <Label htmlFor="currentSpots">Current Spots</Label>
+                    <Input
+                      {...register("currentSpots")}
+                      type="number"
+                      id="currentSpots"
+                    />
+                    {errors.currentSpots && (
                       <p className="text-red-500 text-[10px]">
-                        {errors.status.message}
+                        {errors.currentSpots.message}
                       </p>
                     )}
                   </div>
-                </div>
 
-                <div className="my-2">
-                  <Label htmlFor="currentSpots">Current Spots</Label>
-                  <Input {...register("currentSpots")} id="currentSpots" />
-                  {errors.currentSpots && (
-                    <p className="text-red-500 text-[10px]">
-                      {errors.currentSpots.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="my-2">
-                  <Label htmlFor="legalDocument">Legal Document</Label>
-                  <Input
-                    {...register("legalDoc", {
-                      required: "Legal document is required",
-                      validate: {
-                        notEmpty: (value) => {
-                          console.log("File validation:", {
-                            value,
-                            length: value?.length,
-                            isFileList: value instanceof FileList,
-                          });
-                          return value?.length > 0 || "Please select a file";
+                  <div className="w-full">
+                    <Label htmlFor="legalDocument">Legal Document</Label>
+                    <Input
+                      {...register("legalDoc", {
+                        required: "Legal document is required",
+                        validate: {
+                          notEmpty: (value) => {
+                            console.log("File validation:", {
+                              value,
+                              length: value?.length,
+                              isFileList: value instanceof FileList,
+                            });
+                            return value?.length > 0 || "Please select a file";
+                          },
                         },
-                      },
-                    })}
-                    type="file"
-                    id="legalDocument"
-                    accept=".jpg,.jpeg,.png"
-                  />
-                  {errors.legalDoc && (
-                    <p className="text-red-500 text-[10px]">
-                      {String(errors.legalDoc.message)}
-                    </p>
-                  )}
+                      })}
+                      type="file"
+                      id="legalDocument"
+                      accept=".jpg,.jpeg,.png"
+                    />
+                    {errors.legalDoc && (
+                      <p className="text-red-500 text-[10px]">
+                        {String(errors.legalDoc.message)}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <DialogFooter className="mt-5">
