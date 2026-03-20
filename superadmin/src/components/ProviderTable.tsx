@@ -1,5 +1,4 @@
-// import type { ProviderMock } from "@/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
 import { Building2, Filter, MoreHorizontal, Search } from "lucide-react";
@@ -18,59 +17,31 @@ import { useQuery } from "@tanstack/react-query";
 import { providerSchema, type Provider } from "@/schema";
 import z, { ZodError } from "zod";
 import ProviderTableSkeleton from "@/utils/skeletons/ProviderTableSkeleton";
-
-// const providers: ProviderMock[] = [
-//   {
-//     id: 1,
-//     name: "Addis Parking Solutions",
-//     email: "admin@addisparking.et",
-//     locations: 45,
-//     spaces: 2340,
-//     status: "approved",
-//   },
-//   {
-//     id: 2,
-//     name: "Meskel Square Garages",
-//     email: "contact@meskelgarages.et",
-//     locations: 23,
-//     spaces: 1250,
-//     status: "approved",
-//   },
-//   {
-//     id: 3,
-//     name: "Bole Parking PLC",
-//     email: "hello@boleparking.et",
-//     locations: 10,
-//     spaces: 50,
-//     status: "pending",
-//   },
-//   {
-//     id: 4,
-//     name: "Piassa Auto Park",
-//     email: "ops@piassapark.et",
-//     locations: 12,
-//     spaces: 680,
-//     status: "rejected",
-//   },
-//   {
-//     id: 5,
-//     name: "Kazanchis Parking",
-//     email: "info@kazanchispark.et",
-//     locations: 8,
-//     spaces: 920,
-//     status: "approved",
-//   },
-//   {
-//     id: 6,
-//     name: "Merkato Smart Park",
-//     email: "support@merkatopark.et",
-//     locations: 10,
-//     spaces: 100,
-//     status: "pending",
-//   },
-// ];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { useUpdateProviderStatus } from "@/hooks/useUpdateProviderStatus";
+import {
+  Dialog,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogContent,
+  DialogDescription,
+} from "./ui/dialog";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { Label } from "./ui/label";
+import { toast } from "react-hot-toast";
+import { Controller, useForm } from "react-hook-form";
 
 type FilterValue = "all" | "approved" | "rejected" | "underreview";
+type UpdateStatus = {
+  username: string;
+  approvalStatus: string;
+};
 
 const fetchProviders = async (): Promise<Provider[]> => {
   const storedUser = localStorage.getItem("user");
@@ -87,7 +58,7 @@ const fetchProviders = async (): Promise<Provider[]> => {
   }
 
   const response = await fetch(
-    "http://localhost:3000/admin/ownerverificationstatus",
+    "http://localhost:3000/admin/ownerapprovalStatus",
     {
       method: "GET",
       headers: {
@@ -97,6 +68,7 @@ const fetchProviders = async (): Promise<Provider[]> => {
   );
 
   const result = await response.json();
+
 
   if (!response.ok) {
     if (response.status === 401) {
@@ -115,15 +87,64 @@ const fetchProviders = async (): Promise<Provider[]> => {
   }
 };
 
+
 const ProviderTable = () => {
   const [filter, setFilter] = useState<FilterValue>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: provider,error, isLoading, refetch} = useQuery({
+  const [openStatus, setOpenStatus] = useState(false);
+  const [openInfo, setOpenInfo] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>();
+  const [selectedProviderInfo, setSelectedProviderInfo] =
+    useState<Provider | null>();
+
+  const { register, control, handleSubmit, reset } = useForm<UpdateStatus>({
+    defaultValues: {
+      username: "",
+      approvalStatus: "",
+    },
+  });
+
+  const {
+    data: provider,
+    error,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["provider"],
     queryFn: fetchProviders,
     retry: false,
   });
+
+  const { mutate, isPending } = useUpdateProviderStatus();
+
+  const onUpdateSubmit = (data: UpdateStatus) => {
+    mutate(
+      {
+        username: data.username,
+        approvalStatus: data.approvalStatus,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Provider status updated");
+          setOpenStatus(false);
+          refetch();
+        },
+        onError: (err) => {
+          toast.error(`Failed to update status: ${err.message}`);
+        },
+      },
+    );
+  };
+
+  useEffect(() => {
+    if (selectedProvider) {
+      reset({
+        username: selectedProvider.username,
+        approvalStatus: selectedProvider.isVerified.toUpperCase(),
+      });
+    }
+  }, [selectedProvider, reset]);
 
   const filteredProviders = useMemo(() => {
     return provider?.filter((p) => {
@@ -149,6 +170,13 @@ const ProviderTable = () => {
     REJECTED: "bg-red-100 text-red-800 hover:bg-blue-100/80 ",
     UNDERREVIEW: "bg-orange-100 text-orange-800 hover:bg-gray-100/80",
   };
+
+  const getFullImagePath = (path: string | undefined) => {
+  if (!path) return "";
+
+  const cleanPath = path.replace(/\\/g, "/");
+  return `http://localhost:3000/${cleanPath}`;
+};
 
   if (isLoading) {
     return <ProviderTableSkeleton />;
@@ -188,14 +216,12 @@ const ProviderTable = () => {
               Approved<Badge variant="outline">{getCount("approved")}</Badge>
             </TabsTrigger>
             <TabsTrigger value="underreview">
-              Under Review<Badge variant="outline">{getCount("underreview")}</Badge>
+              Under Review
+              <Badge variant="outline">{getCount("underreview")}</Badge>
             </TabsTrigger>
             <TabsTrigger value="rejected">
               Rejected<Badge variant="outline">{getCount("rejected")}</Badge>
             </TabsTrigger>
-            {/* <TabsTrigger value="suspended">
-              Suspended<Badge variant="outline">{getCount("suspended")}</Badge>
-            </TabsTrigger> */}
           </TabsList>
         </Tabs>
 
@@ -264,9 +290,32 @@ const ProviderTable = () => {
                     </p>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {/* Triggers the dialog*/}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setOpenInfo(true);
+                            setSelectedProviderInfo(provider);
+                          }}
+                        >
+                          View details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setOpenStatus(true);
+                            setSelectedProvider(provider);
+                          }}
+                        >
+                          Update status
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
@@ -283,6 +332,122 @@ const ProviderTable = () => {
           </TableBody>
         </Table>
       )}
+      <Dialog open={openInfo} onOpenChange={setOpenInfo}>
+        <DialogContent className=" max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Provider's Info</DialogTitle>
+            <DialogDescription>
+              Complete details about {selectedProviderInfo?.username}
+            </DialogDescription>
+          </DialogHeader>
+          <div className=" flex flex-col no-scrollbar max-h-[58vh] overflow-y-auto text-justify justify-center">
+            <div className=" w-full ">
+              <p className=" text-sm text-muted-foreground font-medium mb-1">Personal ID:</p>
+              <div className=" w-full rounded-lg">
+                <img
+                  src={getFullImagePath(selectedProviderInfo?.personalId)}
+                  alt="personalID"
+                  className=" w-full h-48 object-center object-cover"
+                />
+              </div>
+            </div>
+            <div className=" w-full flex items-center gap-5 mt-2 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1"> Full Name:</p>
+              <p className=" text-sm">{selectedProviderInfo?.firstName}{" "} {selectedProviderInfo?.lastName}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1"> Phone Number:</p>
+              <p className=" text-sm">{selectedProviderInfo?.phoneNo}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1"> Username:</p>
+              <p className=" text-sm">{selectedProviderInfo?.username}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1"> Email:</p>
+              <p className=" text-sm">{selectedProviderInfo?.email}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1"> Approval Status:</p>
+              <p className=" text-sm">{selectedProviderInfo?.isVerified}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1"> Created At:</p>
+              <p className=" text-sm">{selectedProviderInfo?.createdAt}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={openStatus} onOpenChange={setOpenStatus}>
+        <DialogContent className=" max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Provider Status</DialogTitle>
+            <DialogDescription></DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <form onSubmit={handleSubmit(onUpdateSubmit)}>
+              <Controller
+                name="approvalStatus"
+                control={control}
+                render={({ field }) => (
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="grid gap-3"
+                  >
+                    <Label
+                      htmlFor="APPROVED"
+                      className="w-full flex flex-1 cursor-pointer items-center justify-between font-normal"
+                    >
+                      <div className="w-full flex items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent transition-colors">
+                        <RadioGroupItem value="APPROVED" id="APPROVED" />
+                        <span>Approved</span>
+                      </div>
+                    </Label>
+
+                    <div className="flex items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent transition-colors">
+                      <RadioGroupItem value="UNDERREVIEW" id="underreview" />
+                      <Label
+                        htmlFor="underreview"
+                        className="flex flex-1 cursor-pointer items-center justify-between font-normal"
+                      >
+                        <span>Under Review</span>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent transition-colors">
+                      <RadioGroupItem value="REJECTED" id="rejected" />
+                      <Label
+                        htmlFor="rejected"
+                        className="flex flex-1 cursor-pointer items-center justify-between font-normal"
+                      >
+                        <span>Rejected</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
+              <Input type="hidden" {...register("username")} />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOpenStatus(false);
+                    reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Updating..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

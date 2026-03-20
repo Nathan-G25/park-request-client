@@ -21,7 +21,6 @@ import {
   ChartColumn,
   ChevronUp,
   CircleParking,
-  FileText,
   LayoutDashboard,
   LogOut,
   Shield,
@@ -41,6 +40,11 @@ const items = [
     icon: CircleParking,
   },
   {
+    title: "Parking Avenues",
+    url: "/parking-avenues",
+    icon: CircleParking,
+  },
+  {
     title: "Wardens",
     url: "/wardens",
     icon: Shield,
@@ -54,11 +58,6 @@ const items = [
     title: "Analytics",
     url: "/analytics",
     icon: ChartColumn,
-  },
-  {
-    title: "Audit Logs",
-    url: "/audit-logs",
-    icon: FileText,
   },
 ];
 

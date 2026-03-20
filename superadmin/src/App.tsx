@@ -5,11 +5,11 @@ import Providers from "./pages/Providers";
 import Wardens from "./pages/Wardens";
 import Reservations from "./pages/Reservations";
 import Analytics from "./pages/Analytics";
-import AuditLogs from "./pages/AuditLogs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AuthProvider from "./utils/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import LoginPage from "./pages/LoginPage";
+import ParkingAvenues from "./pages/ParkingAvenues";
 
 const queryClient = new QueryClient();
 
@@ -25,10 +25,10 @@ const App = () => {
             <Route element={<Layout />}>
               <Route index element={<Overview />} />
               <Route path="/providers" element={<Providers />} />
+              <Route path="/parking-avenues" element={<ParkingAvenues/>} />
               <Route path="/wardens" element={<Wardens />} />
               <Route path="/reservations" element={<Reservations />} />
               <Route path="/analytics" element={<Analytics />} />
-              <Route path="/audit-logs" element={<AuditLogs />} />
             </Route>
           </Routes>
         </BrowserRouter>

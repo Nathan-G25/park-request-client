@@ -1,5 +1,5 @@
 // import type { ProviderMock } from "@/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
 import { Building2, Clock, Filter, MoreHorizontal, Search } from "lucide-react";
@@ -18,8 +18,37 @@ import { useQuery } from "@tanstack/react-query";
 import { parkingAvenueSchema, type ParkingAvenue } from "@/schema";
 import z, { ZodError } from "zod";
 import ProviderTableSkeleton from "@/utils/skeletons/ProviderTableSkeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+} from "./ui/dialog";
+import { DialogTitle } from "@radix-ui/react-dialog";
+import { Controller, useForm } from "react-hook-form";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { Label } from "./ui/label";
+import { useUpdateAvenueStatus } from "@/hooks/useUpdateAvenueStatus";
+import { toast } from "react-hot-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  Pin,
+} from "@vis.gl/react-google-maps";
 
 type FilterValue = "all" | "approved" | "rejected" | "underreview";
+type UpdateAvenueStatus = {
+  id: string;
+  approvalStatus: string;
+};
 
 const fetchProviders = async (): Promise<ParkingAvenue[]> => {
   const storedUser = localStorage.getItem("user");
@@ -35,12 +64,15 @@ const fetchProviders = async (): Promise<ParkingAvenue[]> => {
     throw new Error("No accesstoken found");
   }
 
-  const response = await fetch("http://localhost:3000/admin/approvalstatus", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
+  const response = await fetch(
+    "http://localhost:3000/admin/avenueapprovalstatus",
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     },
-  });
+  );
 
   const result = await response.json();
 
@@ -61,9 +93,26 @@ const fetchProviders = async (): Promise<ParkingAvenue[]> => {
   }
 };
 
+const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_ID;
+
 const ParkingAvenuesTable = () => {
   const [filter, setFilter] = useState<FilterValue>("all");
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [openStatus, setOpenStatus] = useState(false);
+  const [selectedAvenue, setSelectedAvenue] = useState<ParkingAvenue | null>();
+  const [openInfo, setOpenInfo] = useState(false);
+  const [selectedAvenueInfo, setSelectedAvenueInfo] =
+    useState<ParkingAvenue | null>();
+
+  const { control, reset, register, handleSubmit } =
+    useForm<UpdateAvenueStatus>({
+      defaultValues: {
+        id: "",
+        approvalStatus: "",
+      },
+    });
 
   const {
     data: locations,
@@ -75,6 +124,35 @@ const ParkingAvenuesTable = () => {
     queryFn: fetchProviders,
     retry: false,
   });
+
+  const { mutate, isPending } = useUpdateAvenueStatus();
+
+  const onUpdateSubmit = (data: UpdateAvenueStatus) => {
+    mutate(
+      {
+        id: data.id,
+        approvalStatus: data.approvalStatus,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Parking avenue status updated");
+          setOpenStatus(false);
+          refetch();
+        },
+        onError: (err) => {
+          toast.error(`Failed to update status: ${err.message}`);
+        },
+      },
+    );
+  };
+  useEffect(() => {
+    if (selectedAvenue) {
+      reset({
+        id: selectedAvenue.id,
+        approvalStatus: selectedAvenue.approvalStatus.toUpperCase(),
+      });
+    }
+  }, [selectedAvenue, reset]);
 
   const filteredParkingAvenues = useMemo(() => {
     return locations?.filter((p) => {
@@ -100,6 +178,13 @@ const ParkingAvenuesTable = () => {
     APPROVED: "bg-green-100 text-green-800 hover:bg-green-100/80",
     REJECTED: "bg-red-100 text-red-800 hover:bg-blue-100/80 ",
     UNDERREVIEW: "bg-orange-100 text-orange-800 hover:bg-gray-100/80",
+  };
+
+  const getFullImagePath = (path: string | null | undefined) => {
+    if (!path) return "";
+
+    const cleanPath = path.replace(/\\/g, "/");
+    return `http://localhost:3000/${cleanPath}`;
   };
 
   if (isLoading) {
@@ -231,9 +316,32 @@ const ParkingAvenuesTable = () => {
                     </p>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {/* Triggers the dialog*/}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setOpenInfo(true);
+                            setSelectedAvenueInfo(avenue);
+                          }}
+                        >
+                          View details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setOpenStatus(true);
+                            setSelectedAvenue(avenue);
+                          }}
+                        >
+                          Update status
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
@@ -250,6 +358,173 @@ const ParkingAvenuesTable = () => {
           </TableBody>
         </Table>
       )}
+      <Dialog open={openInfo} onOpenChange={setOpenInfo}>
+        <DialogContent className=" max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Provider's Info</DialogTitle>
+            <DialogDescription>
+              Complete details about {selectedAvenueInfo?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className=" flex flex-col no-scrollbar max-h-[70vh] overflow-y-auto text-justify justify-center">
+            <div className=" w-full ">
+              <p className=" text-sm text-muted-foreground font-medium mb-1">
+                Legal Document:
+              </p>
+              <div className=" w-full rounded-lg">
+                <img
+                  src={getFullImagePath(selectedAvenueInfo?.legalDoc)}
+                  alt="personalID"
+                  className=" w-full h-48 object-center object-cover"
+                />
+              </div>
+            </div>
+            <div className=" w-full flex items-center gap-5 mt-2 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Address:
+              </p>
+              <p className=" text-sm">{selectedAvenueInfo?.address}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Hourly Rate:
+              </p>
+              <p className=" text-sm">{selectedAvenueInfo?.hourlyRate} Birr</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Total Spots:
+              </p>
+              <p className=" text-sm">{selectedAvenueInfo?.totalSpots}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                Status:
+              </p>
+              <p className=" text-sm">{selectedAvenueInfo?.status}</p>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Approval Status:
+              </p>
+              <p className=" text-sm">{selectedAvenueInfo?.approvalStatus}</p>
+            </div>
+            <div className=" w-full mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Location:
+              </p>
+              <div className=" h-30">
+                <APIProvider apiKey={API_KEY}>
+                  <Map
+                    defaultZoom={30}
+                    defaultCenter={{
+                      lat: selectedAvenueInfo?.latitude,
+                      lng: selectedAvenueInfo?.longitude,
+                    }}
+                    mapId={MAP_ID}
+                    disableDefaultUI
+                  >
+                    <AdvancedMarker
+                      position={{
+                        lat: selectedAvenueInfo?.latitude,
+                        lng: selectedAvenueInfo?.longitude,
+                      }}
+                    >
+                      <Pin
+                        background={"#000"}
+                        glyphColor={"#fff"}
+                        borderColor={"#000"}
+                      />
+                    </AdvancedMarker>
+                  </Map>
+                </APIProvider>
+              </div>
+            </div>
+            <div className=" w-full flex items-center gap-5 mb-3">
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Created At:
+              </p>
+              <p className=" text-sm">{selectedAvenueInfo?.createdAt}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={openStatus} onOpenChange={setOpenStatus}>
+        <DialogContent className=" max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Parking Avenue Status</DialogTitle>
+            <DialogDescription></DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <form onSubmit={handleSubmit(onUpdateSubmit)}>
+              <Controller
+                name="approvalStatus"
+                control={control}
+                render={({ field }) => (
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="grid gap-3"
+                  >
+                    <Label
+                      htmlFor="APPROVED"
+                      className="w-full flex flex-1 cursor-pointer items-center justify-between font-normal"
+                    >
+                      <div className="w-full flex items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent transition-colors">
+                        <RadioGroupItem value="APPROVED" id="APPROVED" />
+                        <span>Approved</span>
+                      </div>
+                    </Label>
+
+                    <div className="flex items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent transition-colors">
+                      <RadioGroupItem value="UNDERREVIEW" id="underreview" />
+                      <Label
+                        htmlFor="underreview"
+                        className="flex flex-1 cursor-pointer items-center justify-between font-normal"
+                      >
+                        <span>Under Review</span>
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent transition-colors">
+                      <RadioGroupItem value="REJECTED" id="rejected" />
+                      <Label
+                        htmlFor="rejected"
+                        className="flex flex-1 cursor-pointer items-center justify-between font-normal"
+                      >
+                        <span>Rejected</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
+              <Input type="hidden" {...register("id")} />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOpenStatus(false);
+                    reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Updating..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
