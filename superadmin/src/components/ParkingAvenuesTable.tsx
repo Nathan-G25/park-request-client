@@ -14,9 +14,13 @@ import {
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { parkingAvenueSchema, type ParkingAvenue } from "@/schema";
-import z, { ZodError } from "zod";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  paginatedParkingAvenueSchema,
+  type PaginatedParkingAvenues,
+  type ParkingAvenue,
+} from "@/schema";
+import { ZodError } from "zod";
 import ProviderTableSkeleton from "@/utils/skeletons/ProviderTableSkeleton";
 import {
   Dialog,
@@ -43,14 +47,16 @@ import {
   AdvancedMarker,
   Pin,
 } from "@vis.gl/react-google-maps";
+import { Textarea } from "./ui/textarea";
 
 type FilterValue = "all" | "approved" | "rejected" | "underreview";
 type UpdateAvenueStatus = {
   id: string;
   approvalStatus: string;
+  rejectionReason?: string;
 };
 
-const fetchProviders = async (): Promise<ParkingAvenue[]> => {
+const fetchProviders = async (): Promise<PaginatedParkingAvenues> => {
   const storedUser = localStorage.getItem("user");
 
   if (!storedUser) {
@@ -74,22 +80,35 @@ const fetchProviders = async (): Promise<ParkingAvenue[]> => {
     },
   );
 
-  const result = await response.json();
-
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error("Session expired. Please login again.");
     }
     throw new Error("Could not fetch profile");
   }
+  const result = await response.json();
+
+  const normalizedResult = Array.isArray(result)
+    ? {
+        data: result,
+        meta: { nextCursor: null, hasMore: false },
+      }
+    : {
+        ...result,
+        meta: {
+          nextCursor: result?.meta?.nextCursor ?? null,
+          hasMore: Boolean(result?.meta?.hasMore ?? result?.meta?.hasmore),
+        },
+      };
+
   try {
-    const parsedData = z.array(parkingAvenueSchema).parse(result);
+    const parsedData = paginatedParkingAvenueSchema.parse(normalizedResult);
     return parsedData;
   } catch (err) {
     if (err instanceof ZodError) {
       console.error("Zod validation failed on API response:", err.message);
     }
-    return [];
+    return { data: [], meta: { nextCursor: null, hasMore: false } };
   }
 };
 
@@ -106,26 +125,33 @@ const ParkingAvenuesTable = () => {
   const [selectedAvenueInfo, setSelectedAvenueInfo] =
     useState<ParkingAvenue | null>();
 
-  const { control, reset, register, handleSubmit } =
+  const { control, reset, register, handleSubmit, watch } =
     useForm<UpdateAvenueStatus>({
       defaultValues: {
         id: "",
         approvalStatus: "",
+        rejectionReason: " ",
       },
     });
 
   const {
-    data: locations,
+    data: location,
     error,
+    hasNextPage,
+    fetchNextPage,
     isLoading,
     refetch,
-  } = useQuery({
+  } = useInfiniteQuery({
     queryKey: ["locations"],
     queryFn: fetchProviders,
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
     retry: false,
   });
 
   const { mutate, isPending } = useUpdateAvenueStatus();
+
+  const currentStatus = watch("approvalStatus");
 
   const onUpdateSubmit = (data: UpdateAvenueStatus) => {
     mutate(
@@ -153,6 +179,11 @@ const ParkingAvenuesTable = () => {
       });
     }
   }, [selectedAvenue, reset]);
+
+  const locations = useMemo(
+    () => location?.pages.flatMap((page) => page.data) ?? [],
+    [location],
+  );
 
   const filteredParkingAvenues = useMemo(() => {
     return locations?.filter((p) => {
@@ -358,6 +389,17 @@ const ParkingAvenuesTable = () => {
           </TableBody>
         </Table>
       )}
+      {hasNextPage && (
+        <div className="flex justify-center p-4 border-t">
+          <Button
+            variant="ghost"
+            onClick={() => fetchNextPage()}
+            disabled={isPending}
+          >
+            {isPending ? "Loading..." : "Load More Owners"}
+          </Button>
+        </div>
+      )}
       <Dialog open={openInfo} onOpenChange={setOpenInfo}>
         <DialogContent className=" max-w-sm">
           <DialogHeader>
@@ -505,6 +547,13 @@ const ParkingAvenuesTable = () => {
                 )}
               />
               <Input type="hidden" {...register("id")} />
+              {currentStatus === "REJECTED" && (
+                <Textarea
+                  {...register("rejectionReason")}
+                  placeholder="Enter reason for rejection..."
+                  className="resize-none"
+                />
+              )}
 
               <DialogFooter>
                 <Button

@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query"
 
 export const useUpdateProviderStatus = () => {
     return useMutation({
-        mutationFn: async (data: {username: string, approvalStatus: string}) => {
+        mutationFn: async (data: {username: string, approvalStatus: string, rejectionReason?: string}) => {
             const storedUser = localStorage.getItem("user");
 
             if (!storedUser) {

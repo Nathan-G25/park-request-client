@@ -15,16 +15,16 @@ import { Label } from "@/components/ui/label";
 import { useAddParkingAvenue } from "@/hooks/useAddParkingAvenue";
 import {
   createParkingAvenueSchema,
-  parkingAvenueResponseSchema,
+  paginatedAvenueResponseSchema,
   type CreateParkingAvenue,
-  type ParkingAvenue,
+  type PaginatedParkingAvenues,
 } from "@/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { useQuery } from "@tanstack/react-query";
-import z, { ZodError } from "zod";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { ZodError } from "zod";
 import {
   APIProvider,
   Map,
@@ -58,45 +58,59 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
-export const fetchParkingAvenues = async (): Promise<ParkingAvenue[]> => {
-  const storedUser = localStorage.getItem("user");
+export const fetchParkingAvenues =
+  async (): Promise<PaginatedParkingAvenues> => {
+    const storedUser = localStorage.getItem("user");
 
-  if (!storedUser) {
-    throw new Error("No user found");
-  }
-
-  const user = JSON.parse(storedUser);
-  const token = user.accessToken;
-
-  if (!token) {
-    throw new Error("No accesstoken found");
-  }
-
-  const response = await fetch("http://localhost:3000/parking-avenue/list", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error("Session expired. Please login again.");
+    if (!storedUser) {
+      throw new Error("No user found");
     }
-    throw new Error("Could not fetch profile");
-  }
-  try {
-    const parsedData = z.array(parkingAvenueResponseSchema).parse(data);
-    return parsedData;
-  } catch (err) {
-    if (err instanceof ZodError) {
-      console.error("Zod validation failed on API response:", err.message);
+
+    const user = JSON.parse(storedUser);
+    const token = user.accessToken;
+
+    if (!token) {
+      throw new Error("No accesstoken found");
     }
-    return [];
-  }
-};
+
+    const response = await fetch("http://localhost:3000/parking-avenue/list", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Session expired. Please login again.");
+      }
+      throw new Error("Could not fetch profile");
+    }
+    const normalizedResult = Array.isArray(result)
+      ? {
+          data: result,
+          meta: { nextCursor: null, hasMore: false },
+        }
+      : {
+          ...result,
+          meta: {
+            nextCursor: result?.meta?.nextCursor ?? null,
+            hasMore: Boolean(result?.meta?.hasMore ?? result?.meta?.hasmore),
+          },
+        };
+
+    try {
+      const parsedData = paginatedAvenueResponseSchema.parse(normalizedResult);
+      return parsedData;
+    } catch (err) {
+      if (err instanceof ZodError) {
+        console.error("Zod validation failed on API response:", err.message);
+      }
+      return { data: [], meta: { nextCursor: null, hasMore: false } };
+    }
+  };
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_ID;
@@ -169,15 +183,22 @@ const MapPicker = ({
 };
 
 const ParkingAssetPage = () => {
-  const { data: location, error } = useQuery({
+  const { data: location, hasNextPage, fetchNextPage, isFetchingNextPage,error } = useInfiniteQuery({
     queryKey: ["parkingAvenues"],
     queryFn: fetchParkingAvenues,
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
     retry: false,
   });
 
   if (error) {
     console.error("Error fetching user profile:", error);
   }
+
+  const locations = useMemo(
+    () => location?.pages.flatMap((page) => page.data) ?? [],
+    [location],
+  );
 
   const { mutate, isPending } = useAddParkingAvenue();
   const [open, setOpen] = useState(false);
@@ -562,10 +583,28 @@ const ParkingAssetPage = () => {
         </Dialog>
       </div>
 
-      {location &&
-        location.map((loc: ParkingAvenue) => (
+      {locations &&
+        locations.map((loc: (typeof locations)[0]) => (
           <ParkingLocationCard key={loc.id} location={loc} />
         ))}
+
+      <div className="flex flex-col items-center mt-8 pb-10">
+        {hasNextPage && (
+          <Button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            variant="outline"
+          >
+            {isFetchingNextPage ? "Loading more..." : "Load More Assets"}
+          </Button>
+        )}
+
+        {!hasNextPage && locations.length > 0 && (
+          <p className="text-muted-foreground text-sm">
+            You've reached the end of your assets.
+          </p>
+        )}
+      </div>
     </div>
   );
 };

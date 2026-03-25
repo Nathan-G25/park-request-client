@@ -24,9 +24,22 @@ export const providerSchema = z.object({
     lastLogin: z.string().nullable(),
     isVerified: z.enum(["APPROVED", "UNDERREVIEW", "REJECTED"]),
     personalId: z.string(),
+    rejectionReason: z.string().optional().nullable(),
+    totalLocations: z.coerce.number().default(0),
+    totalSpaces: z.coerce.number().default(0),
 })
 
 export type Provider = z.infer<typeof providerSchema>
+
+export const PaginatedOwnersSchema = z.object({
+  data: z.array(providerSchema),
+  meta: z.object({
+    nextCursor: z.string().nullable().optional(),
+    hasMore: z.boolean(),
+  }),
+});
+
+export type PaginatedOwners = z.infer<typeof PaginatedOwnersSchema>
 
 export const parkingAvenueSchema = z.object({
     id: z.string(),
@@ -44,7 +57,18 @@ export const parkingAvenueSchema = z.object({
     legalDoc: z.string().optional().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
-    approvalStatus: z.enum(["APPROVED", "UNDERREVIEW", "REJECTED"])
+    approvalStatus: z.enum(["APPROVED", "UNDERREVIEW", "REJECTED"]),
+    rejectionReason: z.string().optional().nullable(),
 });
 
 export type ParkingAvenue = z.infer<typeof parkingAvenueSchema>
+
+export const paginatedParkingAvenueSchema = z.object({
+    data: z.array(parkingAvenueSchema),
+    meta: z.object({
+        nextCursor: z.string().nullable().optional(),
+        hasMore: z.boolean(),
+    }),
+});
+
+export type PaginatedParkingAvenues = z.infer<typeof paginatedParkingAvenueSchema>

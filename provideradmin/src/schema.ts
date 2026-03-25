@@ -76,10 +76,21 @@ export const parkingAvenueResponseSchema = z.object({
   legalDoc: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  approvalStatus: z.string()
+  approvalStatus: z.string(),
+  rejectionReason: z.string().optional().nullable(),
 });
 
 export type ParkingAvenue = z.infer<typeof parkingAvenueResponseSchema>;
+
+export const paginatedAvenueResponseSchema = z.object({
+  data: z.array(parkingAvenueResponseSchema),
+  meta: z.object({
+    nextCursor: z.string().nullable().optional(),
+    hasMore: z.boolean(),
+  }),
+});
+
+export type PaginatedParkingAvenues = z.infer<typeof paginatedAvenueResponseSchema>;
 
 export const createWardenSchema = z.object({
   firstName: z

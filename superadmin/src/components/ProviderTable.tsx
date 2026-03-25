@@ -13,9 +13,13 @@ import {
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { providerSchema, type Provider } from "@/schema";
-import z, { ZodError } from "zod";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  PaginatedOwnersSchema,
+  type PaginatedOwners,
+  type Provider,
+} from "@/schema";
+import { ZodError } from "zod";
 import ProviderTableSkeleton from "@/utils/skeletons/ProviderTableSkeleton";
 import {
   DropdownMenu,
@@ -36,14 +40,20 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
 import { toast } from "react-hot-toast";
 import { Controller, useForm } from "react-hook-form";
+import { Textarea } from "./ui/textarea";
 
 type FilterValue = "all" | "approved" | "rejected" | "underreview";
 type UpdateStatus = {
   username: string;
   approvalStatus: string;
+  rejectionReason?: string;
 };
 
-const fetchProviders = async (): Promise<Provider[]> => {
+const fetchProviders = async ({
+  pageParam,
+}: {
+  pageParam?: string;
+}): Promise<PaginatedOwners> => {
   const storedUser = localStorage.getItem("user");
 
   if (!storedUser) {
@@ -58,35 +68,48 @@ const fetchProviders = async (): Promise<Provider[]> => {
   }
 
   const response = await fetch(
-    "http://localhost:3000/admin/ownerapprovalStatus",
+    `http://localhost:3000/admin/ownerapprovalStatus${pageParam ? `?cursor=${pageParam}` : ""}`,
     {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     },
   );
 
-  const result = await response.json();
-
-
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error("Session expired. Please login again.");
+      throw new Error("Token expired. Please login again.");
     }
     throw new Error("Could not fetch profile");
   }
+
+  const result = await response.json();
+
+  const normalizedResult = Array.isArray(result)
+    ? {
+        data: result,
+        meta: { nextCursor: null, hasMore: false },
+      }
+    : {
+        ...result,
+        meta: {
+          nextCursor: result?.meta?.nextCursor ?? null,
+          hasMore: Boolean(result?.meta?.hasMore ?? result?.meta?.hasmore),
+        },
+      };
+
   try {
-    const parsedData = z.array(providerSchema).parse(result);
+    const parsedData = PaginatedOwnersSchema.parse(normalizedResult);
     return parsedData;
   } catch (err) {
     if (err instanceof ZodError) {
       console.error("Zod validation failed on API response:", err.message);
     }
-    return [];
+    return { data: [], meta: { nextCursor: null, hasMore: false } };
   }
 };
-
 
 const ProviderTable = () => {
   const [filter, setFilter] = useState<FilterValue>("all");
@@ -98,31 +121,39 @@ const ProviderTable = () => {
   const [selectedProviderInfo, setSelectedProviderInfo] =
     useState<Provider | null>();
 
-  const { register, control, handleSubmit, reset } = useForm<UpdateStatus>({
-    defaultValues: {
-      username: "",
-      approvalStatus: "",
-    },
-  });
+  const { register, control, handleSubmit, reset, watch } =
+    useForm<UpdateStatus>({
+      defaultValues: {
+        username: "",
+        approvalStatus: "",
+      },
+    });
 
   const {
     data: provider,
+    hasNextPage,
+    fetchNextPage,
     error,
     isLoading,
     refetch,
-  } = useQuery({
+  } = useInfiniteQuery({
     queryKey: ["provider"],
     queryFn: fetchProviders,
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
     retry: false,
   });
 
   const { mutate, isPending } = useUpdateProviderStatus();
+
+  const currentStatus = watch("approvalStatus");
 
   const onUpdateSubmit = (data: UpdateStatus) => {
     mutate(
       {
         username: data.username,
         approvalStatus: data.approvalStatus,
+        rejectionReason: data.rejectionReason,
       },
       {
         onSuccess: () => {
@@ -146,8 +177,13 @@ const ProviderTable = () => {
     }
   }, [selectedProvider, reset]);
 
+  const providers = useMemo(
+    () => provider?.pages.flatMap((page) => page.data) ?? [],
+    [provider],
+  );
+
   const filteredProviders = useMemo(() => {
-    return provider?.filter((p) => {
+    return providers.filter((p) => {
       const matchesSearch =
         p.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -157,10 +193,10 @@ const ProviderTable = () => {
 
       return matchesSearch && matchesTab;
     });
-  }, [provider, searchTerm, filter]);
+  }, [providers, searchTerm, filter]);
 
   const getCount = (status: string) =>
-    provider?.filter((p) =>
+    providers.filter((p) =>
       status === "all"
         ? true
         : p.isVerified.toLowerCase() === status.toLowerCase(),
@@ -172,11 +208,11 @@ const ProviderTable = () => {
   };
 
   const getFullImagePath = (path: string | undefined) => {
-  if (!path) return "";
+    if (!path) return "";
 
-  const cleanPath = path.replace(/\\/g, "/");
-  return `http://localhost:3000/${cleanPath}`;
-};
+    const cleanPath = path.replace(/\\/g, "/");
+    return `http://localhost:3000/${cleanPath}`;
+  };
 
   if (isLoading) {
     return <ProviderTableSkeleton />;
@@ -274,8 +310,12 @@ const ProviderTable = () => {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">20</TableCell>
-                  <TableCell className="text-center">400</TableCell>
+                  <TableCell className="text-center">
+                    {provider.totalLocations}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {provider.totalSpaces}
+                  </TableCell>
                   <TableCell>
                     <p
                       className={cn(
@@ -332,6 +372,17 @@ const ProviderTable = () => {
           </TableBody>
         </Table>
       )}
+      {hasNextPage && (
+        <div className="flex justify-center p-4 border-t">
+          <Button
+            variant="ghost"
+            onClick={() => fetchNextPage()}
+            disabled={isPending}
+          >
+            {isPending ? "Loading..." : "Load More Owners"}
+          </Button>
+        </div>
+      )}
       <Dialog open={openInfo} onOpenChange={setOpenInfo}>
         <DialogContent className=" max-w-sm">
           <DialogHeader>
@@ -342,7 +393,9 @@ const ProviderTable = () => {
           </DialogHeader>
           <div className=" flex flex-col no-scrollbar max-h-[58vh] overflow-y-auto text-justify justify-center">
             <div className=" w-full ">
-              <p className=" text-sm text-muted-foreground font-medium mb-1">Personal ID:</p>
+              <p className=" text-sm text-muted-foreground font-medium mb-1">
+                Personal ID:
+              </p>
               <div className=" w-full rounded-lg">
                 <img
                   src={getFullImagePath(selectedProviderInfo?.personalId)}
@@ -352,27 +405,48 @@ const ProviderTable = () => {
               </div>
             </div>
             <div className=" w-full flex items-center gap-5 mt-2 mb-3">
-              <p className="text-sm text-muted-foreground font-medium mb-1"> Full Name:</p>
-              <p className=" text-sm">{selectedProviderInfo?.firstName}{" "} {selectedProviderInfo?.lastName}</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Full Name:
+              </p>
+              <p className=" text-sm">
+                {selectedProviderInfo?.firstName}{" "}
+                {selectedProviderInfo?.lastName}
+              </p>
             </div>
             <div className=" w-full flex items-center gap-5 mb-3">
-              <p className="text-sm text-muted-foreground font-medium mb-1"> Phone Number:</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Phone Number:
+              </p>
               <p className=" text-sm">{selectedProviderInfo?.phoneNo}</p>
             </div>
             <div className=" w-full flex items-center gap-5 mb-3">
-              <p className="text-sm text-muted-foreground font-medium mb-1"> Username:</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Username:
+              </p>
               <p className=" text-sm">{selectedProviderInfo?.username}</p>
             </div>
             <div className=" w-full flex items-center gap-5 mb-3">
-              <p className="text-sm text-muted-foreground font-medium mb-1"> Email:</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Email:
+              </p>
               <p className=" text-sm">{selectedProviderInfo?.email}</p>
             </div>
             <div className=" w-full flex items-center gap-5 mb-3">
-              <p className="text-sm text-muted-foreground font-medium mb-1"> Approval Status:</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Approval Status:
+              </p>
               <p className=" text-sm">{selectedProviderInfo?.isVerified}</p>
             </div>
             <div className=" w-full flex items-center gap-5 mb-3">
-              <p className="text-sm text-muted-foreground font-medium mb-1"> Created At:</p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">
+                {" "}
+                Created At:
+              </p>
               <p className=" text-sm">{selectedProviderInfo?.createdAt}</p>
             </div>
           </div>
@@ -428,6 +502,13 @@ const ProviderTable = () => {
                 )}
               />
               <Input type="hidden" {...register("username")} />
+              {currentStatus === "REJECTED" && (
+                <Textarea
+                  {...register("rejectionReason")}
+                  placeholder="Enter reason for rejection..."
+                  className="resize-none"
+                />
+              )}
 
               <DialogFooter>
                 <Button
