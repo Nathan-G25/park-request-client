@@ -1,37 +1,23 @@
-import type { NotificationType } from "@/types";
-import { AlertTriangleIcon, Car, CheckCircle2, Clock, UserCheck, type LucideIcon } from "lucide-react";
+import type { LiveActivity } from "@/schema";
+import { Car, Clock, type LucideIcon } from "lucide-react";
 
 export const getNotificationStyles: Record<
-  NotificationType,
+  LiveActivity["type"],
   {
     icon: LucideIcon;
     bgColor: string;
     iconColor: string;
   }
 > = {
-  reservation: {
+  RESERVATION: {
     icon: Clock,
     bgColor: "bg-blue-100",
     iconColor: "text-blue-600",
   },
-  "walk-in": {
+  WALK_IN: {
     icon: Car,
     bgColor: "bg-teal-100",
     iconColor: "text-teal-600",
   },
-  "check-in": {
-    icon: UserCheck,
-    bgColor: "bg-green-100",
-    iconColor: "text-green-600",
-  },
-    "capacity": {
-        icon: AlertTriangleIcon,
-        bgColor: "bg-orange-100",
-        iconColor: "text-orange-600",
-    },
-    "completed": {
-        icon: CheckCircle2,
-        bgColor: "bg-green-100",
-        iconColor: "text-green-600",
-    }
+
 };

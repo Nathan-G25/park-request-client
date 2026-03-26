@@ -66,7 +66,7 @@ const items = [
 
 
 
-const fetchUserProfile = async (): Promise<UserProfile> => {
+export const fetchUserProfile = async (): Promise<UserProfile> => {
       const storedUser = localStorage.getItem("user");
 
       if(!storedUser) {

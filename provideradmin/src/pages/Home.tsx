@@ -1,9 +1,21 @@
 import NotificationList from "@/components/NotificationList";
 import OccupancyChart from "@/components/OccupancyChart";
+import { fetchUserProfile } from "@/components/SideBar";
 import StatCard from "@/components/StatCard";
+import { useLiveActivity } from "@/hooks/useLiveActivity";
 import { cn } from "@/lib/utils";
 import type { Notification } from "@/types";
-import { AlertCircle, Car, CheckCircle2, Clock, Clock2, TrendingUp, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  AlertCircle,
+  Car,
+  CheckCircle2,
+  Clock,
+  Clock2,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { Navigate } from "react-router";
 
 const stats = {
   totalSpaces: 1248,
@@ -60,11 +72,37 @@ const notifications: Notification[] = [
 ];
 
 const Home = () => {
+  const {
+    data: user,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: ["profile"],
+    queryFn: fetchUserProfile,
+    retry: false,
+  });
+
+  if (error) {
+    console.error("Error fetching user profile:", error);
+  }
+
+  if (isLoading) {
+    return <div>Loading application...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  const { data: liveActivity } = useLiveActivity(user?.id);
+
   return (
     <div className=" min-h-screen">
       <header className=" flex flex-col gap-1">
         <h1 className=" font-bold tracking-tighter text-2xl">Dashboard</h1>
-        <p className=" tracking-wide text-sm">Real-time overview of your parking network</p>
+        <p className=" tracking-wide text-sm">
+          Real-time overview of your parking network
+        </p>
       </header>
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-10">
         <StatCard
@@ -101,7 +139,7 @@ const Home = () => {
       </section>
       <div className=" grid grid-cols-1 lg:grid-cols-2 gap-y-6 gap-x-10 mt-10 ">
         {/* Live Notification */}
-        <section className="flex flex-col justify-center px-5 py-3 rounded-md shadow-lg border border-gray-200 bg-white/90">
+        <section className="flex flex-col max-h-[250px] justify-start px-5 py-3 rounded-md shadow-lg border overflow-y-auto scroll-smooth border-gray-200 bg-white/90">
           <div className=" flex flex-col gap-1">
             <h2 className=" text-lg text-gray-900 font-medium">
               Live Activity
@@ -111,7 +149,31 @@ const Home = () => {
             </p>
           </div>
           <div className=" w-full bg-white flex flex-col">
-            <NotificationList notification={notifications} />
+            {liveActivity.length === 0 ? (
+              <div className="py-10 text-center border-2 border-dashed rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  No recent activity. Updates will appear here in real-time.
+                </p>
+              </div>
+            ) : (
+              <NotificationList
+                notification={
+                  Array.isArray(liveActivity)
+                    ? liveActivity.map((n: any) => ({
+                        type:
+                          n.type === "RESERVATION"
+                            ? "RESERVATION"
+                            : n.type === "WALK_IN"
+                              ? "WALK_IN"
+                              : "WALK_IN", // fallback or adjust as needed
+                        message: n.title ?? n.description ?? "",
+                        timestamp: new Date(), // Replace with actual timestamp if available
+                        metadata: n,
+                      }))
+                    : []
+                }
+              />
+            )}
           </div>
         </section>
         {/* Today's Occupancy */}
@@ -142,7 +204,7 @@ const Home = () => {
                     "text-gray-500 text-sm",
                     Summary.wallkInsChange > 0
                       ? "text-green-600"
-                      : "text-red-400"
+                      : "text-red-400",
                   )}
                 >
                   {Summary.wallkInsChange > 0 ? "+" : "-"}
@@ -169,7 +231,9 @@ const Home = () => {
               </div>
             </div>
 
-            <h3 className=" font-bold text-2xl mr-2">{Summary.avgParkingDuration}</h3>
+            <h3 className=" font-bold text-2xl mr-2">
+              {Summary.avgParkingDuration}
+            </h3>
           </div>
           <div className=" bg-neutral-50 shadow-md rounded-md px-4 py-3 flex justify-between gap-x-3 items-center">
             <div className=" flex items-center gap-x-3">
@@ -178,11 +242,15 @@ const Home = () => {
               </div>
               <div className=" flex flex-col gap-1 justify-center">
                 <h3 className=" text-gray-800 font-medium">Peak Occupancy</h3>
-                <p className={cn("text-gray-500 text-sm")}>Reached at {Summary.time}</p>
+                <p className={cn("text-gray-500 text-sm")}>
+                  Reached at {Summary.time}
+                </p>
               </div>
             </div>
 
-            <h3 className=" font-bold text-2xl mr-2">{Summary.peakOccupancy}</h3>
+            <h3 className=" font-bold text-2xl mr-2">
+              {Summary.peakOccupancy}
+            </h3>
           </div>
         </section>
       </div>

@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import type { Notification } from "@/types";
+import type { LiveActivity } from "@/schema";
 import { getNotificationStyles } from "@/utils/NotificationStyler";
 
 interface NotificationListProps {
-  notification: Notification[];
+  notification: LiveActivity[];
 }
 
 const NotificationList = ({ notification }: NotificationListProps) => {
@@ -19,10 +19,10 @@ const NotificationList = ({ notification }: NotificationListProps) => {
             </div>
             <div className=" flex-1 flex items-center justify-between">
                 <div className=" flex flex-col justify-center gap-0.5">
-                    <h2 className=" text-gray-900 text-sm md:text-base md:w-60">{notif.title}</h2>
-                    <p className=" text-gray-400 text-xs md:text-sm">{notif.description}</p>
+                    <h2 className=" text-gray-900 text-sm md:text-base md:w-60">{notif.type}</h2>
+                    <p className=" text-gray-400 text-xs md:text-sm">{notif.message}</p>
                 </div>
-                <p className=" text-gray-500 text-xs md:text-sm">{notif.timeAgo}</p>
+                <p className=" text-gray-500 text-xs md:text-sm">{notif.timestamp.toLocaleTimeString()}</p>
             </div>
           </div>
         );

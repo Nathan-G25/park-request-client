@@ -50,6 +50,7 @@ export const createParkingAvenueSchema = z.object({
 export type CreateParkingAvenue = z.infer<typeof createParkingAvenueSchema>
 
 export const ProfileSchema = z.object({
+  id: z.string(),
   firstName: z.string(),
   lastName: z.string(),
   username: z.string(),
@@ -151,3 +152,12 @@ export const wardenSchema = z.object({
 });
 
 export type Warden = z.infer<typeof wardenSchema>;
+
+export const liveActivitySchema = z.object({
+  type: z.enum(['RESERVATION','WALK_IN']),
+  message: z.string(),
+  timestamp: z.date(),
+  metadata: z.any().optional().nullable()
+});
+
+export type LiveActivity = z.infer<typeof liveActivitySchema>;
