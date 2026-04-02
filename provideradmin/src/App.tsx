@@ -12,6 +12,7 @@ import ReservationsPage from "./pages/ReservationsPage.tsx";
 import AnalyticsPage from "./pages/AnalyticsPage.tsx";
 import SignUpPage from "./pages/SignUpPage.tsx";
 import { Toaster } from "react-hot-toast"
+import ResetPassword from "./pages/ResetPassword.tsx";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,8 @@ const App = () => {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/resetpassword" element={<ResetPassword />} />
+
             {/* //This will be the dashboard and main layout route */}
             <Route element={<Layout />}>
               <Route index element={<Home />} />

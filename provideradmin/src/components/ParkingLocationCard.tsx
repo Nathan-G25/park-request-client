@@ -55,16 +55,15 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
   } = useForm({
     resolver: zodResolver(createWardenSchema),
     defaultValues: {
-    firstName: "",
-    lastName: "",
-    username: "",
-    phoneNo: "",
-    gender: "MALE",
-    wardenStatus: "OFFDUTY",
-    currentLocation: "",
-    residenceArea: "",
-    parkingAvenueId: location.id,
-  },
+      firstName: "",
+      lastName: "",
+      username: "",
+      phoneNo: "",
+      gender: "MALE",
+      wardenStatus: "OFFDUTY",
+      residenceArea: "",
+      parkingAvenueId: location.id,
+    },
   });
 
   const onSubmit = (data: CreateWarden) => {
@@ -245,12 +244,11 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                   control={control}
                   name="gender"
                   render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger
-                        className={errors.gender ? "border-destructive w-full" : "w-full"}
+                        className={
+                          errors.gender ? "border-destructive w-full" : "w-full"
+                        }
                       >
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
@@ -273,12 +271,13 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                   control={control}
                   name="wardenStatus"
                   render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger
-                        className={errors.wardenStatus ? "border-destructive w-full" : "w-full"}
+                        className={
+                          errors.wardenStatus
+                            ? "border-destructive w-full"
+                            : "w-full"
+                        }
                       >
                         <SelectValue placeholder="Select warden status" />
                       </SelectTrigger>
@@ -296,33 +295,21 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                 )}
               </div>
             </div>
-
-            <div className="pt-2 flex gap-5 items-center">
-              <div>
-                <Label htmlFor="currentLocation">Current Location</Label>
-                <Input {...register("currentLocation")} id="currentLocation" />
-                {errors.currentLocation && (
-                  <p className="text-red-500 text-[10px]">
-                    {errors.currentLocation.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="residenceArea">Residence</Label>
-                <Input {...register("residenceArea")} id="residenceArea" />
-                {errors.residenceArea && (
-                  <p className="text-red-500 text-[10px]">
-                    {errors.residenceArea.message}
-                  </p>
-                )}
-              </div>
+            <div>
+              <Label htmlFor="residenceArea">Residence</Label>
+              <Input {...register("residenceArea")} id="residenceArea" />
+              {errors.residenceArea && (
+                <p className="text-red-500 text-[10px]">
+                  {errors.residenceArea.message}
+                </p>
+              )}
             </div>
 
             <div className="hidden">
-              <Input 
-                {...register("parkingAvenueId")} 
-                type="hidden" 
-                value={location.id} 
+              <Input
+                {...register("parkingAvenueId")}
+                type="hidden"
+                value={location.id}
               />
               {errors.parkingAvenueId && (
                 <p className="text-red-500 text-[10px]">

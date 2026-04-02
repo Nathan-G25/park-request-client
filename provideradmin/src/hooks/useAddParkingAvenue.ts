@@ -29,6 +29,7 @@ export const useAddParkingAvenue = () => {
             formData.append("totalSpots", data.totalSpots.toString());
             formData.append("status", data.status);
             formData.append("currentSpots", data.currentSpots.toString());
+            formData.append("subCity", data.subCity);
 
             if (data.legalDoc && data.legalDoc[0]) {
 
@@ -60,6 +61,9 @@ export const useAddParkingAvenue = () => {
             console.log("🔍 Response status:", response.status);
             console.log("🔍 Response headers:", Object.fromEntries(response.headers.entries()));
             console.log("🔍 Raw response body:", rawText);
+
+            console.log(response);
+            console.log(data);
 
             if (!response.ok) {
                 // Try to parse as JSON, fallback to raw text

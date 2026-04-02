@@ -58,6 +58,20 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
+export const SUBCITY = [
+  "ADDISKETEMA",
+  "AKAKYKALITI",
+  "ARADA",
+  "BOLE",
+  "GULLELE",
+  "KIRKOS",
+  "KOLFEKERANIO",
+  "LIDETA",
+  "NIFASSILKLAFTO",
+  "YEKA",
+  "LEMIKURA",
+] as const
+
 export const fetchParkingAvenues =
   async (): Promise<PaginatedParkingAvenues> => {
     const storedUser = localStorage.getItem("user");
@@ -183,7 +197,13 @@ const MapPicker = ({
 };
 
 const ParkingAssetPage = () => {
-  const { data: location, hasNextPage, fetchNextPage, isFetchingNextPage,error } = useInfiniteQuery({
+  const {
+    data: location,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    error,
+  } = useInfiniteQuery({
     queryKey: ["parkingAvenues"],
     queryFn: fetchParkingAvenues,
     initialPageParam: undefined,
@@ -230,6 +250,7 @@ const ParkingAssetPage = () => {
 
   const watchedLat = watch("latitude") as string;
   const watchedLng = watch("longitude") as string;
+  const subcityValue = watch("subCity");
 
   const startTime = watch("startTime");
   const endTime = watch("endTime");
@@ -289,7 +310,7 @@ const ParkingAssetPage = () => {
             <Button onClick={() => setOpen(true)}>Add Parking Location</Button>
           </DialogTrigger>
 
-          <DialogContent className="sm:max-w-xl">
+          <DialogContent className="sm:max-w-xl overflow-auto max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Add Parking Location</DialogTitle>{" "}
               <DialogDescription>
@@ -526,33 +547,61 @@ const ParkingAssetPage = () => {
                       </p>
                     )}
                   </div>
-
-                  <div className="w-full">
-                    <Label htmlFor="legalDocument">Legal Document</Label>
-                    <Input
-                      {...register("legalDoc", {
-                        required: "Legal document is required",
-                        validate: {
-                          notEmpty: (value) => {
-                            console.log("File validation:", {
-                              value,
-                              length: value?.length,
-                              isFileList: value instanceof FileList,
-                            });
-                            return value?.length > 0 || "Please select a file";
-                          },
-                        },
-                      })}
-                      type="file"
-                      id="legalDocument"
-                      accept=".jpg,.jpeg,.png"
-                    />
-                    {errors.legalDoc && (
+                  <div className="mb-4 w-full">
+                    <label className="block font-medium text-xs text-gray-700 pb-1">
+                      Subcity
+                    </label>
+                    <Select
+                      onValueChange={(value) => setValue("subCity", value as typeof SUBCITY[number])}
+                      value={subcityValue}
+                    >
+                      <SelectTrigger className="h-8.5 text-xs border-gray-300 focus:ring-blue-500 w-full">
+                        <SelectValue placeholder="Select subcity" />
+                      </SelectTrigger>
+                      <SelectContent className=" uppercase">
+                        {SUBCITY.map((scity) => (
+                          <SelectItem
+                            key={scity}
+                            value={scity}
+                            className="text-xs uppercase"
+                          >
+                            {scity}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.subCity && (
                       <p className="text-red-500 text-[10px]">
-                        {String(errors.legalDoc.message)}
+                        {errors.subCity.message}
                       </p>
                     )}
                   </div>
+                </div>
+                <div className="w-full">
+                  <Label htmlFor="legalDocument">Legal Document</Label>
+                  <Input
+                    {...register("legalDoc", {
+                      required: "Legal document is required",
+                      validate: {
+                        notEmpty: (value) => {
+                          console.log("File validation:", {
+                            value,
+                            length: value?.length,
+                            isFileList: value instanceof FileList,
+                          });
+                          return value?.length > 0 || "Please select a file";
+                        },
+                      },
+                    })}
+                    type="file"
+                    id="legalDocument"
+                    accept=".jpg,.jpeg,.png"
+                  />
+                  {errors.legalDoc && (
+                    <p className="text-red-500 text-[10px]">
+                      {String(errors.legalDoc.message)}
+                    </p>
+                  )}
                 </div>
 
                 <DialogFooter className="mt-5">

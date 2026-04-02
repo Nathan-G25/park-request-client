@@ -22,6 +22,7 @@ export const signUpSchema = z.object({
 
 export type SignUpFormData = z.infer<typeof signUpSchema>;
 
+
 export const createParkingAvenueSchema = z.object({
   name: z.string().min(1, "Name is required"),
   address: z.string().min(1, "Address is required"),
@@ -33,6 +34,19 @@ export const createParkingAvenueSchema = z.object({
   hourlyRate: z.coerce.number().min(0),
   totalSpots: z.coerce.number().int().min(1),
   status: z.enum(["OPEN", "CLOSED", "FULL"]),
+  subCity: z.enum([
+    'ADDISKETEMA',
+    'AKAKYKALITI',
+    'ARADA',
+    'BOLE',
+    'GULLELE',
+    'KIRKOS',
+    'KOLFEKERANIO',
+    'LIDETA',
+    'NIFASSILKLAFTO',
+    'YEKA',
+    'LEMIKURA'
+  ],),
   currentSpots: z.coerce.number().int().min(0),
   legalDoc: z
     .any()
@@ -119,10 +133,6 @@ export const createWardenSchema = z.object({
 
   wardenStatus: z.enum(["ONDUTY", "OFFDUTY"]),
 
-  currentLocation: z
-    .string()
-    .min(1, 'Current location is required'),
-
   residenceArea: z
     .string()
     .min(1, 'Residence area is required'),
@@ -143,7 +153,6 @@ export const wardenSchema = z.object({
   phoneNo: z.string(),
   gender: z.string(),
   wardenStatus: z.string(),
-  currentLocation: z.string(),
   residenceArea: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -153,8 +162,18 @@ export const wardenSchema = z.object({
 
 export type Warden = z.infer<typeof wardenSchema>;
 
+export const paginatedWardenSchema = z.object({
+  data: z.array(wardenSchema),
+  meta: z.object({
+    nextCursor: z.string().nullable().optional(),
+    hasMore: z.boolean(),
+  }),
+});
+
+export type PaginatedWardens = z.infer<typeof paginatedWardenSchema>;
+
 export const liveActivitySchema = z.object({
-  type: z.enum(['RESERVATION','WALK_IN']),
+  type: z.enum(['RESERVATION', 'WALK_IN']),
   message: z.string(),
   timestamp: z.date(),
   metadata: z.any().optional().nullable()

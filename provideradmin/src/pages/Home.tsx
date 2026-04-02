@@ -71,6 +71,39 @@ const notifications: Notification[] = [
   },
 ];
 
+type Stats = {
+  totalSpots: number;
+  availableSpotsNow: number;
+  activeReservationsCount: number;
+  onDutyWardenCount: number;
+}
+
+const fetchOverview = async (id: string | undefined): Promise<Stats> => {
+  const ownerId = id;
+
+  if(!ownerId) {
+    throw new Error("User not found")
+  }
+
+  const response = await fetch(`http://localhost:3000/parking-avenue-owner/dashboard/overview?ownerId=${ownerId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
+
+  if(!response.ok) {
+    throw new Error(`${response.status}: Failed to fetch stats`);
+  }
+
+  const result = await response.json();
+
+  console.log(result);
+
+  return result;
+}
+
+
 const Home = () => {
   const {
     data: user,
@@ -81,6 +114,14 @@ const Home = () => {
     queryFn: fetchUserProfile,
     retry: false,
   });
+
+  const { data: liveActivity } = useLiveActivity(user?.id);
+
+  const { data: stat } = useQuery({
+    queryKey: ["overviewStats", user?.id],
+    queryFn: () => fetchOverview(user?.id),
+    retry: false
+  })
 
   if (error) {
     console.error("Error fetching user profile:", error);
@@ -94,8 +135,6 @@ const Home = () => {
     return <Navigate to="/login" />;
   }
 
-  const { data: liveActivity } = useLiveActivity(user?.id);
-
   return (
     <div className=" min-h-screen">
       <header className=" flex flex-col gap-1">
@@ -107,7 +146,7 @@ const Home = () => {
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-10">
         <StatCard
           title="Total Spaces"
-          value={stats.totalSpaces.toLocaleString()}
+          value={stat ? stat.totalSpots : stats.totalSpaces}
           description={`Across 4 locations`}
           icon={Car}
           trend={{ value: stats.totalChange, isPositive: true }}
@@ -115,7 +154,7 @@ const Home = () => {
 
         <StatCard
           title="Available Now"
-          value={stats.available}
+          value={stat ? stat.availableSpotsNow : stats.occupancy}
           description={`${stats.occupancy}% of total capacity`}
           icon={CheckCircle2}
           variant="success"
@@ -123,7 +162,7 @@ const Home = () => {
 
         <StatCard
           title="Active Reservations"
-          value={stats.activeReservations}
+          value={ stat ? stat.activeReservationsCount : stats.activeReservations}
           description={`+${stats.pending} pending`}
           icon={Clock}
           trend={{ value: stats.reservationChange, isPositive: true }}
@@ -132,7 +171,7 @@ const Home = () => {
 
         <StatCard
           title="On-Duty Wardens"
-          value={stats.wardensOnDuty}
+          value={stat ? stat.onDutyWardenCount : stats.wardensOnDuty}
           description={`${stats.wardensOnline} online, ${stats.wardensOnBreak} on break`}
           icon={Users}
         />

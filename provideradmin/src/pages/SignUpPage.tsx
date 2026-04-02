@@ -16,7 +16,6 @@ const SignUpPage = () => {
     resolver: zodResolver(signUpSchema),
   });
 
-
   const onSubmit = (data: SignUpFormData) => {
     reset();
     toast.promise(mutateAsync(data), {
@@ -136,25 +135,28 @@ const SignUpPage = () => {
               )}
             </div>
           </div>
-          <div className=" mb-4 w-full">
-            <label
-              htmlFor="phoneNo"
-              className=" block font-medium text-xs text-gray-700 pb-1"
-            >
-              Phone Number
-            </label>
-            <input
-              {...register("phoneNo")}
-              type="text"
-              id="phoneNo"
-              className=" w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-500 placeholder:text-xs"
-              placeholder="Enter phone number"
-            />
-            {errors.phoneNo && (
-              <p className="text-red-500 text-[10px]">
-                {errors.phoneNo.message}
-              </p>
-            )}
+          <div className=" flex items-center gap-5 w-full">
+            <div className=" mb-4 w-full">
+              <label
+                htmlFor="phoneNo"
+                className=" block font-medium text-xs text-gray-700 pb-1"
+              >
+                Phone Number
+              </label>
+              <input
+                {...register("phoneNo")}
+                type="text"
+                id="phoneNo"
+                className=" w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-500 placeholder:text-xs"
+                placeholder="Enter phone number"
+              />
+              {errors.phoneNo && (
+                <p className="text-red-500 text-[10px]">
+                  {errors.phoneNo.message}
+                </p>
+              )}
+            </div>
+          
           </div>
           <div className=" mb-6 w-full">
             <label
@@ -195,7 +197,7 @@ const SignUpPage = () => {
           <button
             disabled={isPending}
             type="submit"
-            className=" font-medium w-full bg-linear-to-b from-[#8958F2] to-[#1326F5] text-white py-2 px-4 rounded-lg shadow-md backdrop-blur-lg hover:cursor-pointer disabled:bg-gray-400"
+            className=" w-full bg-linear-to-b from-[#8958F2] to-[#1326F5] text-white py-2 px-4 rounded-lg shadow-md backdrop-blur-lg hover:cursor-pointer disabled:bg-gray-400"
           >
             {isPending ? (
               <div className="flex items-center gap-2">
@@ -224,6 +226,12 @@ const SignUpPage = () => {
               "Sign Up"
             )}
           </button>
+          <div className=" flex items-center gap-1 text-gray-500 text-xs pt-3 justify-center w-full">
+            <p>Already have an account?</p>
+            <a href="/login" className=" text-blue-500 hover:underline">
+              Login
+            </a>
+          </div>
         </form>
       </div>
     </main>

@@ -1,10 +1,11 @@
 import WardenCard from "@/components/WardenCard";
 import WardenStatCard from "@/components/WardenStatCard";
-import { wardenSchema, type Warden } from "@/schema";
-import { useQuery } from "@tanstack/react-query";
+import { paginatedWardenSchema, type PaginatedWardens } from "@/schema";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { CheckCircle2, Clock, Star } from "lucide-react";
-import z, { ZodError } from "zod";
-import { fetchParkingAvenues } from "./ParkingAssetPage";
+import { ZodError } from "zod";
+import { Button } from "@/components/ui/button";
+import { useMemo } from "react";
 
 const data = {
   online: 8,
@@ -12,9 +13,8 @@ const data = {
   avgReliability: 92,
 };
 
-const fecthWardens = async (parkingAvenue: string): Promise<Warden[]> => {
+const fecthWardens = async (): Promise<PaginatedWardens> => {
   const storedUser = localStorage.getItem("user");
-  const parkingAvenueId = parkingAvenue;
 
   if (!storedUser) {
     throw new Error("No user found");
@@ -27,10 +27,8 @@ const fecthWardens = async (parkingAvenue: string): Promise<Warden[]> => {
     throw new Error("No accesstoken found");
   }
 
-  console.log(parkingAvenueId);
-
   const response = await fetch(
-    `http://localhost:3000/warden?id=${parkingAvenueId}`,
+    "http://localhost:3000/parking-avenue-owner/wardens",
     {
       method: "GET",
       headers: {
@@ -39,45 +37,64 @@ const fecthWardens = async (parkingAvenue: string): Promise<Warden[]> => {
     },
   );
 
-  const data = await response.json();
-  console.log(data);
-
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error("Session expired. Please login again.");
     }
     throw new Error(`${response.status} Could not fetch warden profile`);
   }
+
+  const result = await response.json();
+
+  const normalizedResult = Array.isArray(result)
+    ? {
+        data: result,
+        meta: { nextCursor: null, hasMore: false },
+      }
+    : {
+        ...result,
+        meta: {
+          nextCursor: result?.meta?.nextCursor ?? null,
+          hasMore: Boolean(result?.meta?.hasMore ?? result?.meta?.hasmore),
+        },
+      };
+
   try {
-    const parsedData = z.array(wardenSchema).parse(data);
+    const parsedData = paginatedWardenSchema.parse(normalizedResult);
     return parsedData;
   } catch (err) {
     if (err instanceof ZodError) {
       console.error("Zod validation failed on API response:", err.message);
     }
-    return [];
+    return { data: [], meta: { nextCursor: null, hasMore: false } };
   }
 };
 
 const WardensPage = () => {
-  const { data: location } = useQuery({
-    queryKey: ["parkingAvenues"],
-    queryFn: fetchParkingAvenues,
+  // const { data: location } = useQuery({
+  //   queryKey: ["parkingAvenues"],
+  //   queryFn: fetchParkingAvenues,
+  //   retry: false,
+  // });
+
+  const {
+    data: warden,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    error,
+  } = useInfiniteQuery({
+    queryKey: ["wardens"],
+    queryFn: fecthWardens,
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
     retry: false,
   });
 
-  const { data: warden, error } = useQuery({
-    queryKey: ["wardens", location?.[0]?.id],
-    queryFn: () => {
-      if (!location?.[0]?.id) {
-        // Return empty array or handle as needed when id is not available
-        return Promise.resolve([]);
-      }
-      return fecthWardens(location[0].id);
-    },
-    enabled: !!location?.[0]?.id,
-    retry: false,
-  });
+  const wardens = useMemo(
+    () => warden?.pages.flatMap((page) => page.data) ?? [],
+    [warden],
+  );
 
   if (error) {
     console.error("Error fetching user profile:", error);
@@ -117,10 +134,27 @@ const WardensPage = () => {
         <h2 className=" text-lg font-semibold">All Wardens</h2>
       </div>
       <div className=" space-y-5 pt-5 pb-6">
-        {warden &&
-          warden.map((wardens) => (
-            <WardenCard key={wardens.id} warden={wardens} />
+        {wardens &&
+          wardens.map((ward: (typeof wardens)[0]) => (
+            <WardenCard key={ward.id} warden={ward} />
           ))}
+      </div>
+      <div className="flex flex-col items-center mt-8 pb-10">
+        {hasNextPage && (
+          <Button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            variant="outline"
+          >
+            {isFetchingNextPage ? "Loading more..." : "Load More Assets"}
+          </Button>
+        )}
+
+        {!hasNextPage && wardens.length > 0 && (
+          <p className="text-muted-foreground text-sm">
+            You've reached the end of your assets.
+          </p>
+        )}
       </div>
     </div>
   );

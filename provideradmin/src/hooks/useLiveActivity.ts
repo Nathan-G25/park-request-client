@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { LiveActivity } from '@/schema';
 
-export const useLiveActivity = (ownerId: string) => {
+export const useLiveActivity = (ownerId: string | undefined) => {
   const queryClient = useQueryClient();
   const queryKey = ['live-activities', ownerId];
 
