@@ -4,7 +4,7 @@ import { Card } from "./ui/card";
 
 interface AnalyticsCardProps {
   icon: LucideIcon;
-  value: number | string;
+  value: number | string  | any ;
   label: string;
   color?: "trend" | "graph" | "clock" | "mappin";
   className?: string;

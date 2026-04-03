@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 
 const Providers = () => {
-  const { mutateAsync, isPending } = useAddOwner();
+  const { mutate, isPending } = useAddOwner();
 
   const [open, setOpen] = useState(false);
   const {
@@ -32,22 +32,26 @@ const Providers = () => {
   });
 
   const onSubmit = async (data: SignUpFormData) => {
-  // console.log("📁 personalId type:", typeof data.personalId);
-  // console.log("📁 personalId instanceof FileList:", data.personalId instanceof FileList);
-  // console.log("📁 personalId length:", data.personalId?.length);
-  // if (data.personalId?.[0]) {
-  //   console.log("📁 File name:", data.personalId[0].name);
-  //   console.log("📁 File size:", data.personalId[0].size);
-  //   console.log("📁 File type:", data.personalId[0].type);
+  // console.log("📁 personalId type:", typeof data.personalld);
+  // console.log("📁 personalId instanceof FileList:", data.personalld instanceof FileList);
+  // console.log("📁 personalId length:", data.personalld?.length);
+  // if (data.personalld?.[0]) {
+  //   console.log("📁 File name:", data.personalld[0].name);
+  //   console.log("📁 File size:", data.personalld[0].size);
+  //   console.log("📁 File type:", data.personalld[0].type);
   // }
+  mutate(data, {
+      onSuccess: (data) => {
+        toast.success(data.message || "Provider Created Successfully");
+        // reset();
+        setOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      }
+    });
   
-  toast.promise(mutateAsync(data), {
-    loading: "Uploading your details and ID...",
-    success: (res) => `Registered, ${res.parkingAvenueOwner.username}!`,
-    error: (err) => `Registration failed: ${err.message}`,
-  });
-  
-  reset();
+  // reset();
 };
 
   return (
@@ -229,7 +233,7 @@ const Providers = () => {
                     type="button"
                     variant="outline"
                     disabled={isPending}
-                    onClick={() => reset()}
+                    // onClick={() => reset()}
                   >
                     Cancel
                   </Button>

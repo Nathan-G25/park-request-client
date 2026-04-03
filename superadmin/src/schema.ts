@@ -124,3 +124,29 @@ export const createParkingAvenueSchema = z.object({
 });
 
 export type CreateParkingAvenue = z.infer<typeof createParkingAvenueSchema>
+
+export const wardenSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  phoneNumber: z.string().optional(),
+  wardenStatus: z.string(),
+  parkingAvenueId: z.string().nullable(),
+  createdAt: z.string().datetime().optional(), // or z.date() if pre-parsed
+});
+
+export const wardenPaginationSchema = z.object({
+  hasMore: z.boolean(),
+  nextCursor: z.string().nullable(),
+  totalWardens: z.number().int().nonnegative(),
+  onDutyCount: z.number().int().nonnegative(),
+  offDutyCount: z.number().int().nonnegative(),
+});
+
+
+export const wardenResponseSchema = z.object({
+  wardens: z.array(wardenSchema),
+  pagination: wardenPaginationSchema,
+});
+
+export type Warden = z.infer<typeof wardenSchema>;
+export type WardenResponse = z.infer<typeof wardenResponseSchema>;

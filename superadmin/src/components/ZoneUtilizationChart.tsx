@@ -7,16 +7,16 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 
-const chartData = [
-  { zone: "Downtown", utilization: 87 },
-  { zone: "Business", utilization: 92 },
-  { zone: "Residential", utilization: 65 },
-  { zone: "Waterfront", utilization: 78 },
-  { zone: "Academic", utilization: 71 },
-  { zone: "Airport", utilization: 45 },
-];
+// const chartData = [
+//   { zone: "Downtown", utilization: 87 },
+//   { zone: "Business", utilization: 92 },
+//   { zone: "Residential", utilization: 65 },
+//   { zone: "Waterfront", utilization: 78 },
+//   { zone: "Academic", utilization: 71 },
+//   { zone: "Airport", utilization: 45 },
+// ];
 
-const ZoneUtilizationChart = () => {
+const ZoneUtilizationChart = (zoneUtilization: Array<{ zone: string; utilization: number }>) => {
   return (
     <Card>
       <CardHeader>
@@ -27,7 +27,7 @@ const ZoneUtilizationChart = () => {
         <ChartContainer config={chartConfig}>
           <BarChart
             accessibilityLayer
-            data={chartData}
+            data={zoneUtilization}
             layout="vertical"
             margin={{
               left: -20,

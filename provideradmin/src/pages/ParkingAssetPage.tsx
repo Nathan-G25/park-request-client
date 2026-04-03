@@ -603,6 +603,32 @@ const ParkingAssetPage = () => {
                     </p>
                   )}
                 </div>
+                 <div className="w-full">
+                  <Label htmlFor="photosUrl">photos</Label>
+                  <Input
+                    {...register("photosUrl", {
+                      required: "photos is required",
+                      validate: {
+                        notEmpty: (value) => {
+                          console.log("File validation:", {
+                            value,
+                            length: value?.length,
+                            isFileList: value instanceof FileList,
+                          });
+                          return value?.length > 0 || "Please select a file";
+                        },
+                      },
+                    })}
+                    type="file"
+                    id="legalDocument"
+                    accept=".jpg,.jpeg,.png"
+                  />
+                  {errors.legalDoc && (
+                    <p className="text-red-500 text-[10px]">
+                      {String(errors.legalDoc.message)}
+                    </p>
+                  )}
+                </div>
 
                 <DialogFooter className="mt-5">
                   <DialogClose asChild>

@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 
 interface WardenStatCardProps {
   icon: LucideIcon;
-  value: number | string;
+  value: number | string | undefined;
   label: string;
   color?: "success" | "warning" | "accent" ;
   className?: string;

@@ -48,6 +48,9 @@ export const createParkingAvenueSchema = z.object({
     'LEMIKURA'
   ],),
   currentSpots: z.coerce.number().int().min(0),
+  photosUrl: z.instanceof(FileList).refine(
+    (files) => files?.length === 1,
+    "avenue image is required"),
   legalDoc: z
     .any()
     .refine((files) => files?.length === 1, "Legal Document Image is required")

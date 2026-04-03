@@ -1,4 +1,4 @@
-import { Pie, PieChart, ResponsiveContainer } from "recharts";
+import { Pie, PieChart } from "recharts";
 import {
   ChartContainer,
   ChartLegend,
@@ -11,30 +11,32 @@ const chartConfig = {
   walkins: { label: "Walk-ins", color: "hsl(173.4 80.4% 51.4%)" },
 } satisfies ChartConfig;
 
-const chartData = [
-  { type: "reservations", visitors: 62, fill: "var(--color-reservations)" },
-  { type: "walkins", visitors: 38, fill: "var(--color-walkins)" },
-];
+const BookingPieChart = ({
+  visitorSplit = { reservations: 0, walkIns: 0 },
+}: {
+  visitorSplit?: { reservations: number; walkIns: number }
+}) => {
+  const chart = [
+    { name: "reservations", visitors: visitorSplit.reservations, fill: "var(--color-reservations)" },
+    { name: "walkins", visitors: visitorSplit.walkIns, fill: "var(--color-walkins)" },
+  ];
 
-const BookingPieChart = () => {
   return (
     <div className="py-8">
-      <ChartContainer config={chartConfig} className=" min-h-50">
-        <ResponsiveContainer width="100%" height="100%">
+      <ChartContainer config={chartConfig} className="h-fit">
         <PieChart>
           <Pie
-            data={chartData}
+            data={chart}
             dataKey="visitors"
             nameKey="type"
             innerRadius={60}
             strokeWidth={5}
           />
           <ChartLegend
-            content={<ChartLegendContent nameKey="type" />}
+            content={<ChartLegendContent nameKey="name" />}
             className="-translate-y-2 flex-col items-start gap-2"
           />
         </PieChart>
-        </ResponsiveContainer>
       </ChartContainer>
     </div>
   );

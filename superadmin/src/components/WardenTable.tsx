@@ -7,6 +7,9 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { cn } from "@/lib/utils";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { ZodError } from "zod";
+import { wardenResponseSchema, type WardenResponse } from "@/schema";
 
 const wardens: Warden[] = [
   {
@@ -73,18 +76,98 @@ const wardens: Warden[] = [
 
 type FilterValue = "All" | "active" | "inactive" | "flagged";
 
+export const fetchWardens = async ({
+  pageParam,
+}: {
+  pageParam?: string;
+}): Promise<WardenResponse> => {
+  const storedUser = localStorage.getItem("user");
+
+  if (!storedUser) {
+    throw new Error("No user found");
+  }
+
+  const user = JSON.parse(storedUser);
+  const token = user.accessToken;
+
+  if (!token) {
+    throw new Error("No accesstoken found");
+  }
+
+  const response = await fetch(
+    `http://localhost:3000/admin/list-wardens${pageParam ? `?cursor=${pageParam}` : ""}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Token expired. Please login again.");
+    }
+    throw new Error("Could not fetch profile");
+  }
+
+  const result = await response.json();
+
+  const normalizedResult = Array.isArray(result)
+    ? {
+        data: result,
+        meta: { nextCursor: null, hasMore: false },
+      }
+    : {
+        ...result,
+        meta: {
+          nextCursor: result?.meta?.nextCursor ?? null,
+          hasMore: Boolean(result?.meta?.hasMore ?? result?.meta?.hasmore),
+        },
+      };
+
+  try {
+    const parsedData = wardenResponseSchema.parse(normalizedResult);
+    return parsedData;
+  } catch (err) {
+    if (err instanceof ZodError) {
+      console.error("Zod validation failed on API response:", err.message);
+    }
+    return { wardens: [], pagination: { nextCursor: null, hasMore: false, totalWardens: 0, onDutyCount: 0, offDutyCount: 0 } };
+  }
+};
+
 const WardenTable = () => {
+  const {
+    data: warden,
+    hasNextPage,
+    fetchNextPage,
+    error,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ["provider"],
+    queryFn: fetchWardens,
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor ?? undefined,
+    retry: false,
+  });
   const [filter, setFilter] = useState<FilterValue>("All");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const wardensData = useMemo(
+    () => warden?.pages.flatMap((page) => page.wardens) ?? [],
+    [warden],
+  );
+
   const filteredWardens = useMemo(() => {
-    return wardens.filter((w) => {
+    return wardensData.filter((w) => {
       const matchesSearch =
         w.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.provider.toLowerCase().includes(searchTerm.toLowerCase());
+        w.phoneNumber?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesTab =
-        filter === "All" || w.status.toLowerCase() === filter.toLowerCase();
+        filter === "All" || w.wardenStatus.toLowerCase() === filter.toLowerCase();
 
       return matchesSearch && matchesTab;
     });
@@ -112,7 +195,7 @@ const WardenTable = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      <div className="flex items-center justify-between border-b px-4 py-3">
+      {/* <div className="flex items-center justify-between border-b px-4 py-3">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterValue)}>
           <TabsList>
             <TabsTrigger value="All">
@@ -130,7 +213,7 @@ const WardenTable = () => {
           </TabsList>
         </Tabs>
 
-    </div>
+    </div> */}
 
     <Table className="border rounded-xl px-2 border-gray-200">
       <TableHeader>
@@ -139,22 +222,13 @@ const WardenTable = () => {
                 Warden
               </TableHead>
               <TableHead className="font-semibold text-slate-600 text-center">
-                Provider
+                Avenue
               </TableHead>
               <TableHead className="font-semibold text-slate-600 text-center">
                 Zone
               </TableHead>
               <TableHead className="font-semibold text-slate-600">
                 Status
-              </TableHead>
-              <TableHead className="font-semibold text-slate-600">
-                Reliability
-              </TableHead>
-              <TableHead className="font-semibold text-slate-600">
-                Updates Today
-              </TableHead>
-              <TableHead className="font-semibold text-slate-600">
-                Last seen
               </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -176,41 +250,24 @@ const WardenTable = () => {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    {warden.provider}
-                  </TableCell>
-                  <TableCell className="text-center">
+                  {/* <TableCell className="text-center">
                     <div className=" flex items-center gap-1">
                         <MapPin className=" size-4"/>
                         <p>{warden.zone}</p>
                     </div>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <p
                       className={cn(
                         "px-3 py-1 rounded-2xl w-20 text-xs text-center font-medium",
                         statusStyle[
-                          (warden.status.charAt(0).toUpperCase() +
-                            warden.status.slice(1)) as FilterValue
+                          (warden.wardenStatus.charAt(0).toUpperCase() +
+                            warden.wardenStatus.slice(1)) as FilterValue
                         ] || "",
                       )}
                     >
-                      {warden.status}
+                      {warden.wardenStatus}
                     </p>
-                  </TableCell>
-                  <TableCell className=" text-center">
-                    {warden.reliability}
-                  </TableCell>
-                   <TableCell className="text-center">
-                    {warden.updatesToday}
-                  </TableCell>
-                   <TableCell className=" text-center text-gray-500">
-                    {warden.lastSeen}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -226,6 +283,17 @@ const WardenTable = () => {
             )}
           </TableBody>
         </Table>
+         {hasNextPage && (
+        <div className="flex justify-center p-4 border-t">
+          <Button
+            variant="ghost"
+            onClick={() => fetchNextPage()}
+            disabled={isLoading}
+          >
+
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

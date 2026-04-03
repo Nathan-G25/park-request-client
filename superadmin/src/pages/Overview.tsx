@@ -74,11 +74,62 @@ export const fetchOverallStats = async (): Promise<OverallStats> => {
   return result.cards;
 };
 
+type adminKpi = {
+  wardensOnDuty: number;
+  activeCheckIns: number,
+  confirmedReservations: number
+  overallUtilizationRate: number
+}
+
+const fetchAdminKPI = async (): Promise<adminKpi> => {
+
+  const storedUser = localStorage.getItem("user");
+
+      if (!storedUser) {
+        throw new Error("No user found");
+      }
+
+      const user = JSON.parse(storedUser);
+      const token = user.accessToken;
+
+      if (!token) {
+        throw new Error("Unauthorized: No token found");
+      }
+
+  const response = await fetch("http://localhost:3000/admin/kpis", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  console.log(response);
+
+  if(!response.ok) {
+    throw new Error(`${response.status}: Failed to fetch stat`);
+  }
+
+  const result = await response.json();
+
+    return result;
+  }
+
+
+  
+  
+
 const Overview = () => {
   const { data: stats, error } = useQuery({
     queryKey: ["globalStats"],
     queryFn: fetchOverallStats,
     retry: false,
+  });
+
+  const {data: stat } = useQuery({
+    queryKey: ["overviewStat"],
+    queryFn: fetchAdminKPI,
+    retry:false,
   });
 
   if (error) {
@@ -127,14 +178,14 @@ const Overview = () => {
         />
         <StatCard
           title="Active Wardens"
-          value={312}
+          value={stat ? stat.wardensOnDuty : 0}
           icon={ShieldCheck}
           trend={{ value: 5, label: "vs week" }}
         />
 
         <StatCard
           title="Active Drivers"
-          value="24.8K"
+          value={`${stat?.activeCheckIns}`}
           icon={Users}
           trend={{ value: 18, label: "vs last week" }}
         />
@@ -148,7 +199,7 @@ const Overview = () => {
 
         <StatCard
           title="Utilization Rate"
-          value="78%"
+          value={`${stat?.overallUtilizationRate}`}
           icon={Activity}
           trend={{ value: 3, label: "vs last week" }}
         />

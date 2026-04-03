@@ -1,5 +1,6 @@
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "./ui/chart";
+import { useQuery } from "@tanstack/react-query";
 
 const chartConfig = {
   desktop: {
@@ -19,12 +20,51 @@ const chartData = [
   { time: "8 PM", occupancy: 35 },
   { time: "10 PM", occupancy: 20 },
 ];
+const fetchOccupancy = async () => {
+
+  const storedUser = localStorage.getItem("user");
+
+      if (!storedUser) {
+        throw new Error("No user found");
+      }
+
+      const user = JSON.parse(storedUser);
+      const token = user.accessToken;
+
+      if (!token) {
+        throw new Error("Unauthorized: No token found");
+      }
+
+  const response = await fetch("http://localhost:3000/parking-avenue-owner/dashboard/today-occupancy-chart", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  if(!response.ok) {
+    throw new Error(`${response.status}: Failed to fetch stats`);
+  }
+
+  const result = await response.json();
+
+  console.log(result);
+
+  return result;
+}
+
 
 const OccupancyChart = () => {
+   const {data: occupancy} = useQuery({
+    queryKey: ["occupancy"],
+    queryFn: fetchOccupancy,
+    retry:false,
+  });
   return (
     <div className=" py-8">
       <ChartContainer config={chartConfig} className="min-h-50 w-full">
-        <AreaChart accessibilityLayer data={chartData}>
+        <AreaChart accessibilityLayer data={occupancy}>
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey="time"

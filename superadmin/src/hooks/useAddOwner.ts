@@ -27,6 +27,7 @@ export const useAddOwner = () => {
             console.log("  - first file:", data.personalId?.[0]?.name);
 
             if (data.personalId && data.personalId instanceof FileList && data.personalId[0]) {
+                console.log("")
                 formData.append("personalId", data.personalId[0]);
                 console.log("✅ File appended to FormData");
             } else {

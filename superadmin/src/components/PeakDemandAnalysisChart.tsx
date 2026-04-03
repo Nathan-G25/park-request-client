@@ -5,6 +5,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "./ui/chart";
+import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const chartConfig = {
   desktop: {
@@ -25,11 +27,64 @@ const demandData = [
   { time: "10PM", reservations: 180 },
 ];
 
+type peakdemandData = {
+  time: string;
+  reservations: string;
+}
+
+const fetchdemandData = async (): Promise<peakdemandData[]> => {
+
+  const storedUser = localStorage.getItem("user");
+
+      if (!storedUser) {
+        throw new Error("No user found");
+      }
+
+      const user = JSON.parse(storedUser);
+      const token = user.accessToken;
+
+      if (!token) {
+        throw new Error("Unauthorized: No token found");
+      }
+
+  const response = await fetch("http://localhost:3000/admin/reservation-peak-demand", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  console.log(response);
+
+  if(!response.ok) {
+    throw new Error(`${response.status}: Failed to fetch stat`);
+  }
+
+  const result = await response.json();
+
+
+
+    return result;
+  }
+
+
 const PeakDemandAnalysisChart = () => {
+
+  const {data: peakdemand, error} = useQuery({
+    queryKey: ["peakdemand"],
+    queryFn: fetchdemandData,
+    retry:false,
+  })
+
+  if(error) {
+    toast.error(error.message);
+  }
+
   return (
     <div className=" py-8">
       <ChartContainer config={chartConfig} className="max-h-60 w-full">
-        <AreaChart accessibilityLayer data={demandData}>
+        <AreaChart accessibilityLayer data={peakdemand}>
           <CartesianGrid vertical={true} />
           <XAxis
             dataKey="time"

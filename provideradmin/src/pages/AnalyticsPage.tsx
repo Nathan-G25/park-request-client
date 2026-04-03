@@ -3,7 +3,9 @@ import BookingPieChart from "@/components/BookingPieChart";
 import PeakHourOccupancyChart from "@/components/PeakHourOccupancyChart";
 import RevenueChart from "@/components/RevenueChart";
 import WeeklyBarChart from "@/components/WeeklyBarChart";
+import { useQuery } from "@tanstack/react-query";
 import { Calendar, Clock, TrendingUp, Users } from "lucide-react";
+import toast from "react-hot-toast";
 
 const statdata = {
   avgOccupancy: "76%",
@@ -12,7 +14,64 @@ const statdata = {
   revenue: "48.6K",
 };
 
+type kpiStat = {
+  averageOccupancyRate: number;
+  totalVisitors: number;
+  averageStayDurationHours: number;
+  totalRevenue: number;
+  visitorsSplit: {
+    reservations: number;
+    walkIns: number;
+  }
+}
+
+const fetchKPI = async (): Promise<kpiStat> => {
+
+  const storedUser = localStorage.getItem("user");
+
+      if (!storedUser) {
+        throw new Error("No user found");
+      }
+
+      const user = JSON.parse(storedUser);
+      const token = user.accessToken;
+
+      if (!token) {
+        throw new Error("Unauthorized: No token found");
+      }
+
+  const response = await fetch("http://localhost:3000/parking-avenue-owner/occupancy-by-day", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  console.log(response);
+
+  if(!response.ok) {
+    throw new Error(`${response.status}: Failed to fetch stat`);
+  }
+
+  const result = await response.json();
+
+
+
+    return result;
+  }
+
+
 const AnalyticsPage = () => {
+  const {data: kpi, error} = useQuery({
+    queryKey: ["analyticsKpi"],
+    queryFn: fetchKPI,
+    retry:false,
+  })
+
+  if(error) {
+    toast.error(error.message);
+  }
   return (
     <div className=" min-h-screen">
       <div className=" flex flex-col gap-1 justify-center">
@@ -29,25 +88,25 @@ const AnalyticsPage = () => {
         <AnalyticsStatCard
           icon={TrendingUp}
           label="Avg.Occupancy"
-          value={statdata.avgOccupancy}
+          value={kpi ? kpi.averageOccupancyRate : 0}
           color="accent"
         />
         <AnalyticsStatCard
           icon={Users}
           label="Total Visitors"
-          value={statdata.totalVisitors}
+          value={kpi ? kpi.totalVisitors : 0}
           color="success"
         />
         <AnalyticsStatCard
           icon={Clock}
           label="Avg.Duration"
-          value={statdata.avgDuration}
+          value={kpi ? kpi.averageStayDurationHours : 0}
           color="warning"
         />
         <AnalyticsStatCard
           icon={TrendingUp}
           label="Revenue"
-          value={`$${statdata.revenue}`}
+          value={`$${kpi?.totalRevenue}`}
           color="success"
           className=" last:text-green-600"
         />
@@ -96,7 +155,7 @@ const AnalyticsPage = () => {
             <p className=" text-sm text-gray-500">
               Reservations vs walk-ins
             </p>
-            <BookingPieChart />
+            <BookingPieChart visitorSplit={kpi ? kpi.visitorsSplit : {reservations: 0, walkIns: 0}} />
           </div>
         </section>
       </section>

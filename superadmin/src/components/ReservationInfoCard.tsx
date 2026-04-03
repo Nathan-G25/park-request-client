@@ -3,7 +3,7 @@ import { Card } from "./ui/card";
 
 interface ReservationInfoCardProps {
   label: string;
-  value: string;
+  value: number | string | undefined;
   className?: string;
 }
 

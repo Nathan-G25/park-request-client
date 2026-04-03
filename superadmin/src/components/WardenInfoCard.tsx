@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 interface WardenInfoCardProps {
   label: string;
-  value: string;
+  value: number | string;
   className?: string;
 }
 
