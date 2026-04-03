@@ -2,10 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Car, MapPin, MoreHorizontal } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatWorkingHours, parseWorkingHours } from "@/lib/utils";
 import {
   createWardenSchema,
+  editParkingAvenueSchema,
   type CreateWarden,
+  type editParkingAvenue,
   type ParkingAvenue,
 } from "@/schema";
 import {
@@ -22,7 +24,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-  // DialogTrigger is not needed since we control 'open' state externally
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -38,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { useEditAvenue } from "@/hooks/useEditAvenue";
 
 interface ParkingLocationCardProps {
   location: ParkingAvenue;
@@ -45,7 +47,9 @@ interface ParkingLocationCardProps {
 
 const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
   const { mutate, isPending } = useAddWarden();
+  const { mutate: mutateAvenue, isPending: isPendingAvenue } =useEditAvenue();
   const [open, setOpen] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
   const {
     register,
     control,
@@ -65,6 +69,23 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
       parkingAvenueId: location.id,
     },
   });
+  const {
+    register: registerAvenue,
+    control: controlAvenue,
+    handleSubmit: handleSubmitAvenue,
+    reset: resetAvenue,
+    formState: { errors: avenueErrors },
+  } = useForm({
+    resolver: zodResolver(editParkingAvenueSchema),
+    defaultValues: {
+      name: location.name,
+      ...parseWorkingHours(location.workingHrs),
+      hourlyRate: location.hourlyRate,
+      totalSpots: location.totalSpots,
+      currentSpots: location.currentSpots,
+      status: location.status,
+    },
+  });
 
   const onSubmit = (data: CreateWarden) => {
     mutate(data, {
@@ -75,6 +96,20 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
       },
     });
   };
+
+  const onAvenueSubmit = (data: editParkingAvenue) => {
+  const payload = {
+    ...data,
+    workingHrs: formatWorkingHours(data.startTime, data.endTime),
+  };
+
+  mutateAvenue(payload, {
+    onSuccess: () => {
+      toast.success("Avenue updated!");
+      setOpenEdit(false);
+    },
+  });
+};
 
   const percentage = Math.round(
     (location.currentSpots / location.totalSpots) * 100,
@@ -126,6 +161,9 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                 {/* Triggers the dialog*/}
                 <DropdownMenuItem onClick={() => setOpen(true)}>
                   Add warden
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setOpenEdit(true)}>
+                  Edit avenue
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -337,6 +375,157 @@ const ParkingLocationCard = ({ location }: ParkingLocationCardProps) => {
                   </>
                 ) : (
                   "Create"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Avenue Form */}
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <DialogContent className="sm:max-w-xl overflow-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Edit Parking Location</DialogTitle>{" "}
+            <DialogDescription>Modify parking location</DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleSubmitAvenue(onAvenueSubmit)}
+            className=" w-full"
+          >
+            <div className="pt-2 flex gap-5 md: justify-between items-center w-full">
+              <div className=" w-full">
+                <Label htmlFor="name" className="mb-1">
+                  Name
+                </Label>
+                <Input {...registerAvenue("name")} id="name" />
+                {avenueErrors.name && (
+                  <p className="text-red-500 text-[10px]">
+                    {avenueErrors.name.message}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="pt-2 flex gap-5 items-center">
+              <div className=" w-full">
+                <Label htmlFor="workingHours" className="mb-1">
+                  Working Hours
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div>
+                    <Input
+                      type="time"
+                      {...registerAvenue("startTime")}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-muted-foreground">to</span>
+                  <div>
+                    <Input
+                      type="time"
+                      {...registerAvenue("endTime")}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <Input
+                  {...registerAvenue("workingHrs")}
+                  id="workingHours"
+                  className=" hidden"
+                />
+                {avenueErrors.workingHrs && (
+                  <p className="text-red-500 text-[10px]">
+                    {avenueErrors.workingHrs.message}
+                  </p>
+                )}
+              </div>
+              <div className=" w-full">
+                <Label htmlFor="hourlyRate">Hourly Rate</Label>
+                <Input
+                  {...registerAvenue("hourlyRate")}
+                  type="number"
+                  id="hourlyRate"
+                />
+                {avenueErrors.hourlyRate && (
+                  <p className="text-red-500 text-[10px]">
+                    {avenueErrors.hourlyRate.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-5 items-center">
+              <div className=" w-full">
+                <Label htmlFor="totalSpots">Total Spots</Label>
+                <Input
+                  {...registerAvenue("totalSpots")}
+                  type="number"
+                  id="totalSpots"
+                />
+                {avenueErrors.totalSpots && (
+                  <p className="text-red-500 text-[10px]">
+                    {avenueErrors.totalSpots.message}
+                  </p>
+                )}
+              </div>
+              <div className=" w-full">
+                <Label htmlFor="status">Status</Label>
+                <Controller
+                  control={controlAvenue}
+                  name="status"
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger
+                        className={
+                          avenueErrors.status ? "border-destructive w-full" : "w-full"
+                        }
+                      >
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="OPEN">OPEN</SelectItem>
+                        <SelectItem value="CLOSED">CLOSED</SelectItem>
+                        <SelectItem value="FULL">FULL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+            <div className=" flex items-center justify-between my-2 gap-5">
+              <div className="w-full">
+                <Label htmlFor="currentSpots">Current Spots</Label>
+                <Input
+                  {...registerAvenue("currentSpots")}
+                  type="number"
+                  id="currentSpots"
+                />
+                {avenueErrors.currentSpots && (
+                  <p className="text-red-500 text-[10px]">
+                    {avenueErrors.currentSpots.message}
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter className="mt-5">
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPendingAvenue}
+                  onClick={() => resetAvenue()}
+                >
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Editing...
+                  </>
+                ) : (
+                  "Edit"
                 )}
               </Button>
             </DialogFooter>

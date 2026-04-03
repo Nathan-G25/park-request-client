@@ -29,6 +29,7 @@ import {
 import { useLogout } from "@/hooks/useLogout";
 import { useQuery } from "@tanstack/react-query";
 import { ProfileSchema, type UserProfile } from "@/schema";
+import { useNavigate } from "react-router";
 
 const items = [
   {
@@ -112,6 +113,7 @@ export const fetchUserProfile = async (): Promise<UserProfile> => {
 }
 
 const SideBar = () => {
+  const navigate = useNavigate();
 
   const { mutate: logout } = useLogout();
 
@@ -169,7 +171,7 @@ const SideBar = () => {
                 className="w-[--radix-popper-anchor-width]"
                 align="end"
               >
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={ () => navigate("/profile")}>
                   <User2 />
                   <span>Account</span>
                 </DropdownMenuItem>

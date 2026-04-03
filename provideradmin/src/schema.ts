@@ -63,6 +63,19 @@ export const createParkingAvenueSchema = z.object({
 
 export type CreateParkingAvenue = z.infer<typeof createParkingAvenueSchema>
 
+export const editParkingAvenueSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
+  workingHrs: z.string().min(1, "Working hours are required"),
+  hourlyRate: z.coerce.number().min(0),
+  totalSpots: z.coerce.number().int().min(1),
+  status: z.enum(["OPEN", "CLOSED", "FULL"]),
+  currentSpots: z.coerce.number().int().min(0),
+});
+
+export type editParkingAvenue = z.infer<typeof editParkingAvenueSchema>
+
 export const ProfileSchema = z.object({
   id: z.string(),
   firstName: z.string(),
@@ -74,6 +87,14 @@ export const ProfileSchema = z.object({
 });
 
 export type UserProfile = z.infer<typeof ProfileSchema>;
+export const editProfileSchema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  username: z.string(),
+  phoneNo: z.string(),
+});
+
+export type EditProfile = z.infer<typeof editProfileSchema>;
 
 export const parkingAvenueResponseSchema = z.object({
   id: z.string(),
@@ -144,6 +165,44 @@ export const createWardenSchema = z.object({
 });
 
 export type CreateWarden = z.infer<typeof createWardenSchema>;
+
+export const editWardenSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50),
+
+  lastName: z
+    .string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50),
+
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+
+  phoneNo: z
+    .string()
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format (e.g., +251...)')
+    .optional()
+    .or(z.literal('')), // Allows empty string in forms without triggering error
+
+  gender: z.enum(["MALE", "FEMALE"]),
+
+  wardenStatus: z.enum(["ONDUTY", "OFFDUTY"]),
+
+  residenceArea: z
+    .string()
+    .min(1, 'Residence area is required'),
+
+  parkingAvenueId: z
+    .string()
+    .uuid('Invalid ID format')
+    .min(1, 'Please select a parking avenue'),
+});
+
+export type EditWarden = z.infer<typeof editWardenSchema>;
 
 export const wardenSchema = z.object({
   id: z.string().uuid(),

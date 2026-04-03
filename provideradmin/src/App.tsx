@@ -11,8 +11,9 @@ import LiveOpsPage from "./pages/LiveOpsPage.tsx";
 import ReservationsPage from "./pages/ReservationsPage.tsx";
 import AnalyticsPage from "./pages/AnalyticsPage.tsx";
 import SignUpPage from "./pages/SignUpPage.tsx";
-import { Toaster } from "react-hot-toast"
+import { Toaster } from "react-hot-toast";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import Profile from "./pages/Profile.tsx";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => {
               <Route path="live-ops" element={<LiveOpsPage />} />
               <Route path="reservations" element={<ReservationsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="profile" element={<Profile />} />
               <Route />
             </Route>
           </Routes>
